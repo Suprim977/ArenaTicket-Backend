@@ -4,13 +4,12 @@
   "description": "��#\u0000 \u0000A\u0000r\u0000e\u0000n\u0000a\u0000T\u0000i\u0000c\u0000k\u0000e\u0000t\u0000-\u0000B\u0000a\u0000c\u0000k\u0000e\u0000n\u0000d\u0000\r\u0000 \u0000",
   "main": "index.js",
   "scripts": {
-  "dev": "nodemon src/server.ts",
-  "build": "tsc",
-  "start": "node dist/server.js",
-  "lint": "eslint . --ext .ts",
-  "format": "prettier --write \"src/**/*.ts\""
-}
-,
+       "dev": "nodemon --exec tsx src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Suprim977/ArenaTicket-Backend.git"
@@ -55,6 +54,7 @@
     "nodemon": "^3.1.14",
     "prettier": "^3.9.5",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.1",
     "typescript": "^7.0.2"
   }
 }
