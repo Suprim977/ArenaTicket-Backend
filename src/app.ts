@@ -8,6 +8,8 @@ import { errorHandler } from './shared/middleware/errorHandler';
 import { sendSuccess } from './shared/utils/response';
 import authRoutes from './modules/auth/routes';
 
+console.log('>>> Auth routes imported:', typeof authRoutes);
+
 const app: Application = express();
 
 app.use(helmet());
@@ -25,7 +27,9 @@ app.get('/health', (req: Request, res: Response) => {
   sendSuccess(res, { status: 'ok' }, 'Server is healthy');
 });
 
+console.log('>>> About to mount auth routes');
 app.use('/api/v1/auth', authRoutes);
+console.log('>>> Auth routes mounted');
 
 app.use(errorHandler);
 
