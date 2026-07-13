@@ -8,6 +8,7 @@ import { errorHandler } from './shared/middleware/errorHandler';
 import { sendSuccess } from './shared/utils/response';
 import authRoutes from './modules/auth/routes';
 import tournamentRoutes from './modules/tournaments/routes';
+import ticketRoutes from './modules/tickets/routes';
 
 const app: Application = express();
 
@@ -34,6 +35,7 @@ app.get('/health', (req: Request, res: Response) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/tournaments', tournamentRoutes);
+app.use('/api/v1/tickets', ticketRoutes);
 
 // Global Error Handler (Must be last)
 app.use(errorHandler);
