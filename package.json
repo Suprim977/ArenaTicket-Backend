@@ -4,7 +4,7 @@
   "description": "��#\u0000 \u0000A\u0000r\u0000e\u0000n\u0000a\u0000T\u0000i\u0000c\u0000k\u0000e\u0000t\u0000-\u0000B\u0000a\u0000c\u0000k\u0000e\u0000n\u0000d\u0000\r\u0000 \u0000",
   "main": "index.js",
   "scripts": {
-       "dev": "nodemon --exec tsx src/server.ts",
+    "dev": "nodemon --exec tsx src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint . --ext .ts",
@@ -34,8 +34,6 @@
     "mongoose": "^9.7.4",
     "morgan": "^1.11.0",
     "qrcode": "^1.5.4",
-    "swagger-jsdoc": "^6.3.0",
-    "swagger-ui-express": "^5.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

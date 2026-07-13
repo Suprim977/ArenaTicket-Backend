@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { AuthRepository } from './repository';
 import { AppError } from '../../shared/middleware/errorHandler';
 import { IUser } from '../users/model';
@@ -43,16 +43,21 @@ export class AuthService {
   }
 
   private generateTokens(userId: string): { accessToken: string; refreshToken: string } {
+    const accessTokenExpiresIn =
+      (process.env.JWT_ACCESS_EXPIRY || '15m') as SignOptions['expiresIn'];
+    const refreshTokenExpiresIn =
+      (process.env.JWT_REFRESH_EXPIRY || '7d') as SignOptions['expiresIn'];
+
     const accessToken = jwt.sign(
       { userId },
       process.env.JWT_ACCESS_SECRET!,
-      { expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m' }
+      { expiresIn: accessTokenExpiresIn }
     );
 
     const refreshToken = jwt.sign(
       { userId },
       process.env.JWT_REFRESH_SECRET!,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
+      { expiresIn: refreshTokenExpiresIn }
     );
 
     return { accessToken, refreshToken };

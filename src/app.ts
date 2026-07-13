@@ -4,8 +4,6 @@ import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
 import { errorHandler } from './shared/middleware/errorHandler';
 import { sendSuccess } from './shared/utils/response';
 import authRoutes from './modules/auth/routes';
@@ -27,40 +25,15 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
-// Swagger Configuration
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: process.env.SWAGGER_TITLE || 'ArenaTicket API',
-      version: process.env.SWAGGER_VERSION || '1.0.0',
-      description: process.env.SWAGGER_DESCRIPTION || 'Esports Tournament Ticket Booking Platform API',
-    },
-    servers: [{ url: '/api/v1' }],
-    components: {
-      securitySchemes: {
-        bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      },
-    },
-    security: [{ bearerAuth: [] }],
-  },
-  apis: ['./src/modules/*/routes.ts'],
-};
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
 // Health Check
 app.get('/health', (req: Request, res: Response) => {
   sendSuccess(res, { status: 'ok' }, 'Server is healthy');
 });
 
-// API Routes (Versioned)
+// API Routes
 app.use('/api/v1/auth', authRoutes);
 
-// Auth Routes
-app.use('/auth', authRoutes);
-
-// Global Error Handler (Must be last)
+// Global Error Handler 
 app.use(errorHandler);
 
 export default app;
