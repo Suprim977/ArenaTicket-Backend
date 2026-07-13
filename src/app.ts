@@ -7,30 +7,35 @@ import cookieParser from 'cookie-parser';
 import { errorHandler } from './shared/middleware/errorHandler';
 import { sendSuccess } from './shared/utils/response';
 import authRoutes from './modules/auth/routes';
-
-console.log('>>> Auth routes imported:', typeof authRoutes);
+import tournamentRoutes from './modules/tournaments/routes';
 
 const app: Application = express();
 
+// Security Middleware
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
+
+// Parsing Middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(compression());
 
+// Compression & Logging
+app.use(compression());
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
+// Health Check
 app.get('/health', (req: Request, res: Response) => {
   sendSuccess(res, { status: 'ok' }, 'Server is healthy');
 });
 
-console.log('>>> About to mount auth routes');
+// API Routes
 app.use('/api/v1/auth', authRoutes);
-console.log('>>> Auth routes mounted');
+app.use('/api/v1/tournaments', tournamentRoutes);
 
+// Global Error Handler (Must be last)
 app.use(errorHandler);
 
 export default app;
