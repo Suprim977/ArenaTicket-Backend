@@ -13,10 +13,18 @@ export class TournamentController {
 
   createTournament = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { title, description, date, location, prizePool, maxTeams } = createTournamentSchema.parse(req).body;
+      // Validate req.body directly
+      const data = createTournamentSchema.parse(req.body);
       
       const result = await this.tournamentService.createTournament(
-          { title, description, date: new Date(date), location, prizePool, maxTeams, createdBy: req.user!._id.toString() }      );
+        data.title,
+        data.description,
+        new Date(data.date),
+        data.location,
+        data.prizePool,
+        data.maxTeams,
+        req.user!._id.toString()
+      );
       
       sendSuccess(res, result, 'Tournament created successfully', 201);
     } catch (error) {
