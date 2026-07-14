@@ -1,8 +1,8 @@
 import { Response, NextFunction } from 'express';
-import { User } from '../user/user.model';
-import { Tournament } from '../tournament/tournament.model';
-import { Ticket } from '../ticket/ticket.model';
-import { sendSuccess } from '../../utils/response';
+import { User } from '../../user/model/user.model';
+import { Tournament } from '../../tournament/model/tournament.model';
+import { Ticket } from '../../ticket/model/ticket.model';
+import { sendSuccess } from '../../../utils/response';
 
 export class AdminController {
   getAllUsers = async (req: any, res: Response, next: NextFunction): Promise<void> => {

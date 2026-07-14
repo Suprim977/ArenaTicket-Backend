@@ -1,8 +1,8 @@
 import { Response, NextFunction } from 'express';
-import { User } from './user.model';
+import { User } from '../model/user.model';
 import bcrypt from 'bcryptjs';
-import { sendSuccess } from '../../utils/response';
-import { AuthRequest } from '../../middlewares/auth';
+import { sendSuccess } from '../../../utils/response';
+import { AuthRequest } from '../../../middlewares/auth';
 
 export class UserController {
   updateProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {

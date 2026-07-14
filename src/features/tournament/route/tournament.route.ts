@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { TournamentController } from './tournament.controller';
-import { authenticate } from '../../middlewares/auth';
+import { TournamentController } from '../dtos/tournament.controller';
+import { authenticate } from '../../../middlewares/auth';
 
 const router = Router();
 const tournamentController = new TournamentController();

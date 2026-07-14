@@ -1,4 +1,4 @@
-import { Tournament, ITournament } from './tournament.model';
+import { Tournament, ITournament } from '../model/tournament.model';
 
 export class TournamentRepository {
   async createTournament(data: Partial<ITournament>): Promise<ITournament> {

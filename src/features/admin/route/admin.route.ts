@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { AdminController } from './admin.controller';
-import { authenticate } from '../../middlewares/auth';
-import { authorize } from '../../middlewares/authorize';
+import { AdminController } from '../dtos/admin.controller';
+import { authenticate } from '../../../middlewares/auth';
+import { authorize } from '../../../middlewares/authorize';
 
 const router = Router();
 const adminController = new AdminController();

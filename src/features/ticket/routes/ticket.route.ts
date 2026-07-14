@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { TicketController } from './ticket.controller';
-import { authenticate } from '../../middlewares/auth';
+import { TicketController } from '../dtos/ticket.controller';
+import { authenticate } from '../../../middlewares/auth';
 
 const router = Router();
 const ticketController = new TicketController();
