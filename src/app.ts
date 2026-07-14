@@ -9,9 +9,9 @@ import cookieParser from 'cookie-parser';
 import authRoutes from './features/auth/route/auth.route';
 import tournamentRoutes from './features/tournament/route/tournament.route';
 import ticketRoutes from './features/ticket/routes/ticket.route';
-import paymentRoutes from './features/payment/routes/payment.route';
 import userRoutes from './features/user/route/user.route';
 import adminRoutes from './features/admin/route/admin.route';
+import paymentRoutes from './features/payment/routes/payment.route';
 
 // Import middleware
 import { errorHandler } from './middlewares/errorHandler';
@@ -41,9 +41,9 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/tournaments', tournamentRoutes);
 app.use('/api/v1/tickets', ticketRoutes);
-app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/payment', paymentRoutes);
 
 // Error handling
 app.use(errorHandler);
