@@ -10,6 +10,7 @@ import authRoutes from './modules/auth/routes';
 import tournamentRoutes from './modules/tournaments/routes';
 import ticketRoutes from './modules/tickets/routes';
 import userRoutes from './modules/users/routes';
+import adminRoutes from './modules/admin/routes';
 
 const app: Application = express();
 
@@ -32,6 +33,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/tournaments', tournamentRoutes);
 app.use('/api/v1/tickets', ticketRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 app.use(errorHandler);
 
