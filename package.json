@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/Suprim977/ArenaTicket-Backend#readme",
   "dependencies": {
+    "@types/multer": "^2.2.0",
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
@@ -33,6 +34,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.4",
     "morgan": "^1.11.0",
+    "multer": "^2.2.0",
     "qrcode": "^1.5.4",
     "zod": "^4.4.3"
   },
