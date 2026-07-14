@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { UserRepository } from './repository';
 import { IUser } from './model';
-import { AppError } from '../../shared/middleware/errorHandler';
+import { AppError } from '../../middlewares/errorHandler';
 
 export class UserService {
   private userRepository: UserRepository;

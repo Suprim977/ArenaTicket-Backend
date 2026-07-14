@@ -1,4 +1,4 @@
-import { User, IUser } from '../users/model';
+import { User, IUser } from '../user/model';
 
 export class AuthRepository {
   async createUser(userData: Partial<IUser>): Promise<IUser> {

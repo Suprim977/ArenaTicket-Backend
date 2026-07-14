@@ -1,7 +1,7 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { AuthRepository } from './repository';
-import { AppError } from '../../shared/middleware/errorHandler';
-import { IUser } from '../users/model';
+import { AppError } from '../../middlewares/errorHandler';
+import { IUser } from '../user/model';
 
 export class AuthService {
   private authRepository: AuthRepository;

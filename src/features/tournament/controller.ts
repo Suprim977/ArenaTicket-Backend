@@ -1,8 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { TournamentService } from './service';
 import { createTournamentSchema } from './validation';
-import { sendSuccess } from '../../shared/utils/response';
-import { AuthRequest } from '../../shared/middleware/auth';
+import { sendSuccess } from '../../utils/response';
+import { AuthRequest } from '../../middlewares/auth';
 
 export class TournamentController {
   private tournamentService: TournamentService;
