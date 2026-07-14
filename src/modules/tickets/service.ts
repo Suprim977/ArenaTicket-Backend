@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { TicketRepository } from './repository';
 import { ITicket } from './model';
 
@@ -10,8 +11,8 @@ export class TicketService {
 
   async bookTicket(tournamentId: string, userId: string, price: number): Promise<ITicket> {
     return await this.ticketRepository.createTicket({
-      tournament: tournamentId,
-      user: userId,
+      tournament: new mongoose.Types.ObjectId(tournamentId),
+      user: new mongoose.Types.ObjectId(userId),
       price,
       status: 'CONFIRMED',
     });
