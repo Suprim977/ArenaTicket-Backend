@@ -14,7 +14,7 @@ import adminRoutes from './features/admin/routes';
 
 // Import middleware
 import { errorHandler } from './middlewares/errorHandler';
-import { sendSuccess } from './middlewares/response';
+import { sendSuccess } from './utils/response';
 
 const app: Application = express();
 
