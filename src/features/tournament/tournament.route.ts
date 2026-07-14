@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { TournamentController } from './controller';
+import { TournamentController } from './tournament.controller';
 import { authenticate } from '../../middlewares/auth';
 
 const router = Router();

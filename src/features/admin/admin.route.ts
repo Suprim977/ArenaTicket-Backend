@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { AdminController } from './controller';
+import { AdminController } from './admin.controller';
 import { authenticate } from '../../middlewares/auth';
 import { authorize } from '../../middlewares/authorize';
 

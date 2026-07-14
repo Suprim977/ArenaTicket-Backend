@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { TournamentService } from './service';
+import { TournamentService } from './tournament.service';
 import { createTournamentSchema } from './validation';
 import { sendSuccess } from '../../utils/response';
 import { AuthRequest } from '../../middlewares/auth';

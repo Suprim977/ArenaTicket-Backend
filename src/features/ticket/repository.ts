@@ -1,4 +1,4 @@
-import { Ticket, ITicket } from './model';
+import { Ticket, ITicket } from './ticket.model';
 
 export class TicketRepository {
   async createTicket(data: Partial<ITicket>): Promise<ITicket> {

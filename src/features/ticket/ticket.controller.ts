@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { Ticket } from './model';
+import { Ticket } from './ticket.model';
 import { sendSuccess } from '../../utils/response';
 import { AuthRequest } from '../../middlewares/auth';
 

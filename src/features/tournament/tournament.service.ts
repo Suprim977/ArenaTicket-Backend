@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { TournamentRepository } from './repository';
-import { ITournament } from './model';
+import { ITournament } from './tournament.model';
 
 export class TournamentService {
   private tournamentRepository: TournamentRepository;

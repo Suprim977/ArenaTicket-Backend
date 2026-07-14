@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { User } from './model';
+import { User } from './user.model';
 import bcrypt from 'bcryptjs';
 import { sendSuccess } from '../../utils/response';
 import { AuthRequest } from '../../middlewares/auth';

@@ -6,11 +6,11 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 
 // Import routes from features
-import authRoutes from './features/auth/routes';
-import tournamentRoutes from './features/tournament/routes';
-import ticketRoutes from './features/ticket/routes';
-import userRoutes from './features/user/routes';
-import adminRoutes from './features/admin/routes';
+import authRoutes from './features/auth/auth.route';
+import tournamentRoutes from './features/tournament/tournament.route';
+import ticketRoutes from './features/ticket/ticket.route';
+import userRoutes from './features/user/user.route';
+import adminRoutes from './features/admin/admin.route';
 
 // Import middleware
 import { errorHandler } from './middlewares/errorHandler';

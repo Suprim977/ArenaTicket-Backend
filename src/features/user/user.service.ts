@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { UserRepository } from './repository';
-import { IUser } from './model';
+import { IUser } from './user.model';
 import { AppError } from '../../middlewares/errorHandler';
 
 export class UserService {

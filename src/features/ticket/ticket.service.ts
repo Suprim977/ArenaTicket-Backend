@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { TicketRepository } from './repository';
-import { ITicket } from './model';
+import { ITicket } from './ticket.model';
 
 export class TicketService {
   private ticketRepository: TicketRepository;
