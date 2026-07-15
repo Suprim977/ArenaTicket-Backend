@@ -6,6 +6,8 @@ import { authorize } from '../../../middlewares/authorize';
 const router = Router();
 const adminController = new AdminController();
 
+router.post('/login', adminController.login);
+
 router.use(authenticate);
 router.use(authorize('ADMIN'));
 

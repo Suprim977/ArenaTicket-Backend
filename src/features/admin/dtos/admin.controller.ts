@@ -3,8 +3,31 @@ import { User } from '../../user/model/user.model';
 import { Tournament } from '../../tournament/model/tournament.model';
 import { Ticket } from '../../ticket/model/ticket.model';
 import { sendSuccess } from '../../../utils/response';
+import { AuthService } from '../../auth/services/auth.service';
+import { AppError } from '../../../middlewares/errorHandler';
 
 export class AdminController {
+  private authService: AuthService;
+
+  constructor() {
+    this.authService = new AuthService();
+  }
+
+  login = async (req: any, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email, password } = req.body;
+      const result = await this.authService.login({ email, password });
+
+      if (result.user.role !== 'ADMIN') {
+        return next(new AppError('You do not have permission to perform this action', 403));
+      }
+
+      sendSuccess(res, result, 'Admin login successful');
+    } catch (error) {
+      next(error);
+    }
+  };
+
   getAllUsers = async (req: any, res: Response, next: NextFunction): Promise<void> => {
     try {
       const users = await User.find().select('-password');
