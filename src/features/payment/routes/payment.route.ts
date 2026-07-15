@@ -5,6 +5,8 @@ import { authenticate } from '../../../middlewares/auth';
 const router = Router();
 const paymentController = new PaymentController();
 
+router.post('/verify', paymentController.verifyPaymentWebhook);
+
 // Protected routes
 router.use(authenticate);
 

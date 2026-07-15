@@ -7,6 +7,7 @@ export interface IUser extends Document {
   password: string;
   role: 'USER' | 'ADMIN';
   isActive: boolean;
+  profilePicture?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -39,6 +40,10 @@ const userSchema = new Schema<IUser>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    profilePicture: {
+      type: String,
+      default: undefined,
     },
   },
   {

@@ -4,6 +4,7 @@ import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 
 // Import routes from features
 import authRoutes from './features/auth/route/auth.route';
@@ -12,6 +13,7 @@ import ticketRoutes from './features/ticket/routes/ticket.route';
 import userRoutes from './features/user/route/user.route';
 import adminRoutes from './features/admin/route/admin.route';
 import paymentRoutes from './features/payment/routes/payment.route';
+import uploadRoutes from './features/upload/routes/upload.route';
 
 // Import middleware
 import { errorHandler } from './middlewares/errorHandler';
@@ -26,6 +28,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(compression());
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Logging
 if (process.env.NODE_ENV !== 'test') {
@@ -40,10 +43,12 @@ app.get('/health', (req: Request, res: Response) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/tournaments', tournamentRoutes);
+app.use('/api/v1/tournament', tournamentRoutes);
 app.use('/api/v1/tickets', ticketRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/payment', paymentRoutes);
+app.use('/api/v1/upload', uploadRoutes);
 
 // Error handling
 app.use(errorHandler);

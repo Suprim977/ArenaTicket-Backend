@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { TournamentRepository } from '../repository/repository';
 import { ITournament } from '../model/tournament.model';
+import { ITournamentListResponse, ITournamentQueryParams } from '../types/tournament.types';
 
 export class TournamentService {
   private tournamentRepository: TournamentRepository;
@@ -29,7 +30,7 @@ export class TournamentService {
     });
   }
 
-  async getAllTournaments(): Promise<ITournament[]> {
-    return await this.tournamentRepository.getAllTournaments();
+  async getAllTournaments(query: ITournamentQueryParams): Promise<ITournamentListResponse> {
+    return await this.tournamentRepository.searchTournaments(query);
   }
 }

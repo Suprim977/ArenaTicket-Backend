@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { PaymentService } from '../services/payment.service';
 import { sendSuccess } from '../../../utils/response';
 import { AuthRequest } from '../../../middlewares/auth';
-import { createPaymentDto, verifyPaymentDto } from '../dtos/payment.dto';
+import { createPaymentDto, verifyPaymentWebhookDto } from '../dtos/payment.dto';
 
 const paymentService = new PaymentService();
 
@@ -66,6 +66,27 @@ export class PaymentController {
         pidx as string
       );
       sendSuccess(res, payment, 'Payment verified successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  verifyPaymentWebhook = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const payload = verifyPaymentWebhookDto.parse({
+        transactionId: (req.body.transactionId ?? req.query.transactionId) as string,
+        status: (req.body.status ?? req.query.status) as string,
+        amount: Number(req.body.amount ?? req.query.amount),
+        signature: (req.body.signature ?? req.query.signature) as string,
+        gateway: (req.body.gateway ?? req.query.gateway) as 'ESEWA' | 'KHALTI' | undefined,
+      });
+
+      const result = await paymentService.verifyPaymentWebhook(payload);
+      sendSuccess(res, result, 'Payment verified successfully');
     } catch (error) {
       next(error);
     }

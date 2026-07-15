@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { TournamentService } from '../services/tournament.service';
-import { createTournamentSchema } from '../validation/validation';
+import { createTournamentSchema, tournamentQuerySchema } from '../validation/validation';
 import { sendSuccess } from '../../../utils/response';
 import { AuthRequest } from '../../../middlewares/auth';
 
@@ -34,7 +34,8 @@ export class TournamentController {
 
   getAllTournaments = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const result = await this.tournamentService.getAllTournaments();
+      const query = tournamentQuerySchema.parse(req.query);
+      const result = await this.tournamentService.getAllTournaments(query);
       sendSuccess(res, result, 'Tournaments retrieved successfully');
     } catch (error) {
       next(error);

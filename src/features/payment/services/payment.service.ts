@@ -1,7 +1,8 @@
 import { Payment } from '../models/payment.model';
 import { Ticket } from '../../ticket/model/ticket.model';
 import { AppError } from '../../../middlewares/errorHandler';
-import { CreatePaymentDTO } from '../dtos/payment.dto';
+import crypto from 'crypto';
+import { CreatePaymentDTO, VerifyPaymentWebhookDTO } from '../dtos/payment.dto';
 
 type PaymentGatewayResponse = {
   status?: string;
@@ -9,6 +10,103 @@ type PaymentGatewayResponse = {
 };
 
 export class PaymentService {
+  private normalizeWebhookStatus(status: string): 'SUCCESS' | 'FAILED' {
+    const normalizedStatus = status.trim().toUpperCase();
+
+    if (['SUCCESS', 'COMPLETE', 'COMPLETED', 'PAID', 'OK'].includes(normalizedStatus)) {
+      return 'SUCCESS';
+    }
+
+    return 'FAILED';
+  }
+
+  private getWebhookSecret(gateway?: 'ESEWA' | 'KHALTI'): string {
+    if (gateway === 'ESEWA') {
+      return process.env.ESEWA_WEBHOOK_SECRET || process.env.PAYMENT_WEBHOOK_SECRET || process.env.ESEWA_SECRET_KEY || 'test_secret';
+    }
+
+    if (gateway === 'KHALTI') {
+      return process.env.KHALTI_WEBHOOK_SECRET || process.env.PAYMENT_WEBHOOK_SECRET || process.env.KHALTI_SECRET_KEY || 'test_secret';
+    }
+
+    return process.env.PAYMENT_WEBHOOK_SECRET || 'test_secret';
+  }
+
+  private verifyWebhookSignature(
+    transactionId: string,
+    status: string,
+    amount: number,
+    signature: string,
+    gateway?: 'ESEWA' | 'KHALTI'
+  ): boolean {
+    const secret = this.getWebhookSecret(gateway);
+    const payload = `${transactionId}:${status}:${amount}`;
+    const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+
+    return expectedSignature === signature;
+  }
+
+  async verifyPaymentWebhook(data: VerifyPaymentWebhookDTO) {
+    try {
+      const payment = await Payment.findOne({ transactionId: data.transactionId });
+
+      if (!payment) {
+        throw new AppError('Payment not found', 404);
+      }
+
+      if (Number(payment.amount) !== Number(data.amount)) {
+        throw new AppError('Payment amount mismatch', 400);
+      }
+
+      const webhookGateway = data.gateway || (payment.gateway === 'ESEWA' || payment.gateway === 'KHALTI' ? payment.gateway : undefined);
+      const isSignatureValid = this.verifyWebhookSignature(
+        data.transactionId,
+        data.status,
+        data.amount,
+        data.signature,
+        webhookGateway
+      );
+
+      if (!isSignatureValid) {
+        throw new AppError('Invalid payment signature', 401);
+      }
+
+      const nextStatus = this.normalizeWebhookStatus(data.status);
+      payment.status = nextStatus;
+      payment.metadata = {
+        ...(payment.metadata || {}),
+        webhook: {
+          transactionId: data.transactionId,
+          status: data.status,
+          amount: data.amount,
+          gateway: webhookGateway,
+        },
+      };
+
+      await payment.save();
+
+      if (nextStatus === 'SUCCESS' && payment.ticketId) {
+        await Ticket.findByIdAndUpdate(payment.ticketId, {
+          status: 'CONFIRMED',
+        });
+      }
+
+      return {
+        transactionId: payment.transactionId,
+        amount: payment.amount,
+        paymentStatus: payment.status,
+        ticketStatus: nextStatus === 'SUCCESS' && payment.ticketId ? 'CONFIRMED' : undefined,
+        gateway: webhookGateway,
+      };
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError('Payment verification failed', 400);
+    }
+  }
+
   // Initialize eSewa payment
   async initiateEsewaPayment(data: CreatePaymentDTO, userId: string) {
     const transactionId = `ESW${Date.now()}${Math.random().toString(36).substr(2, 9)}`;

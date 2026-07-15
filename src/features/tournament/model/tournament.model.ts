@@ -8,6 +8,7 @@ export interface ITournament extends Document {
   prizePool: number;
   maxTeams: number;
   createdBy: mongoose.Types.ObjectId;
+  bannerUrl?: string;
 }
 
 const tournamentSchema = new Schema<ITournament>(
@@ -19,6 +20,7 @@ const tournamentSchema = new Schema<ITournament>(
     prizePool: { type: Number, required: true, min: 0 },
     maxTeams: { type: Number, required: true, min: 1 },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    bannerUrl: { type: String, default: undefined },
   },
   { timestamps: true }
 );
