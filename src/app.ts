@@ -40,6 +40,7 @@ app.get('/health', (req: Request, res: Response) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/tournaments', tournamentRoutes);
+app.use('/api/v1/tournament', tournamentRoutes);
 app.use('/api/v1/tickets', ticketRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/admin', adminRoutes);
