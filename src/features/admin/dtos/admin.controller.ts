@@ -28,6 +28,30 @@ export class AdminController {
     }
   };
 
+  createUser = async (req: any, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { name, email, password, role = 'USER' } = req.body;
+      const normalizedEmail = String(email).trim().toLowerCase();
+
+      const existingUser = await User.findOne({ email: normalizedEmail });
+      if (existingUser) {
+        return next(new AppError('Email already registered', 409));
+      }
+
+      const user = await User.create({
+        name,
+        email: normalizedEmail,
+        password,
+        role,
+      });
+
+      const { password: _password, ...userObj } = user.toObject();
+      sendSuccess(res, userObj, 'User created successfully', 201);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   getAllUsers = async (req: any, res: Response, next: NextFunction): Promise<void> => {
     try {
       const users = await User.find().select('-password');

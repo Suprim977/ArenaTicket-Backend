@@ -11,6 +11,8 @@ router.post('/login', adminController.login);
 router.use(authenticate);
 router.use(authorize('ADMIN'));
 
+router.post('/user', adminController.createUser);
+router.post('/users', adminController.createUser);
 router.get('/users', adminController.getAllUsers);
 router.delete('/users/:id', adminController.deleteUser);
 router.get('/tournaments', adminController.getAllTournaments);
