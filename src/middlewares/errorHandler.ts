@@ -21,6 +21,11 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
       .join(', ');
   }
 
+  if ((err as { code?: number }).code === 11000) {
+    statusCode = 409;
+    message = 'Duplicate field value';
+  }
+
   if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;

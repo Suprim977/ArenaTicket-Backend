@@ -6,8 +6,9 @@ import { User } from '../../user/model/user.model';
 export class AuthService {
   async register(data: { name: string; email: string; password: string }) {
     const { name, email, password } = data;
+    const normalizedEmail = email.trim().toLowerCase();
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       throw new AppError('Email already registered', 409);
     }
@@ -15,7 +16,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({ 
       name, 
-      email, 
+      email: normalizedEmail, 
       password: hashedPassword 
     });
 
@@ -32,13 +33,14 @@ export class AuthService {
 
   async login(data: { email: string; password: string }) {
     const { email, password } = data;
+    const normalizedEmail = email.trim().toLowerCase();
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
     if (!user) {
       throw new AppError('Invalid credentials', 401);
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       throw new AppError('Invalid credentials', 401);
     }
