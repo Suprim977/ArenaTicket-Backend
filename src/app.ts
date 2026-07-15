@@ -42,6 +42,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/tournaments', tournamentRoutes);
 app.use('/api/v1/tournament', tournamentRoutes);
 app.use('/api/v1/tickets', ticketRoutes);
+app.use('/api/v1/ticket', ticketRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/payment', paymentRoutes);

@@ -9,11 +9,14 @@ export class TicketService {
     this.ticketRepository = new TicketRepository();
   }
 
-  async bookTicket(tournamentId: string, userId: string, price: number): Promise<ITicket> {
+  async bookTicket(tournamentId: string, userId: string, quantity: number): Promise<ITicket> {
+    const unitPrice = Number(process.env.TICKET_UNIT_PRICE || 1000);
+
     return await this.ticketRepository.createTicket({
       tournament: new mongoose.Types.ObjectId(tournamentId),
       user: new mongoose.Types.ObjectId(userId),
-      price,
+      quantity,
+      totalPrice: quantity * unitPrice,
       status: 'CONFIRMED',
     });
   }
