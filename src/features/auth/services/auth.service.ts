@@ -1,32 +1,26 @@
 import jwt from 'jsonwebtoken';
-import { AuthRepository } from '../repository/auth.repository';
 import { AppError } from '../../../middlewares/errorHandler';
-import { IUser } from '../../user/model/user.model';
+import { User } from '../../user/model/user.model';
+import { IAuthResponse } from '../types/auth.types';
 
 export class AuthService {
-  private authRepository: AuthRepository;
-
-  constructor() {
-    this.authRepository = new AuthRepository();
-  }
-
-  async register(data: { name: string; email: string; password: string }): Promise<{ user: IUser; tokens: { accessToken: string; refreshToken: string } }> {
+  async register(data: { name: string; email: string; password: string }): Promise<IAuthResponse> {
     const { name, email, password } = data;
 
-    const existingUser = await this.authRepository.findByEmail(email);
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       throw new AppError('Email already registered', 409);
     }
 
-    const user = await this.authRepository.createUser({ name, email, password });
+    const user = await User.create({ name, email, password });
     const tokens = this.generateTokens(user._id.toString());
     return { user, tokens };
   }
 
-  async login(data: { email: string; password: string }): Promise<{ user: IUser; tokens: { accessToken: string; refreshToken: string } }> {
+  async login(data: { email: string; password: string }): Promise<IAuthResponse> {
     const { email, password } = data;
 
-    const user = await this.authRepository.findByEmail(email);
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       throw new AppError('Invalid credentials', 401);
     }
