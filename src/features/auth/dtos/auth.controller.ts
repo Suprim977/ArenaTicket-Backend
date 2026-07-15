@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../service/auth.service';
+import { AuthService } from '../services/auth.service';
 import { loginSchema, registerSchema } from '../validation/validation';
 import { sendSuccess } from '../../../utils/response';
 
