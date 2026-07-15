@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { AppError } from '../../../middlewares/errorHandler';
 import { User } from '../../user/model/user.model';
 import { IAuthResponse } from '../types/auth.types';
@@ -12,41 +13,47 @@ export class AuthService {
       throw new AppError('Email already registered', 409);
     }
 
-    const user = await User.create({ name, email, password });
-    const tokens = this.generateTokens(user._id.toString());
-    return { user, tokens };
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ name, email, password: hashedPassword });
+    
+    const userObj = user.toObject();
+    delete (userObj as any).password;
+
+    const accessToken = this.generateToken(user._id.toString());
+    return { user: userObj as any, tokens: { accessToken } };
   }
 
   async login(data: { email: string; password: string }): Promise<IAuthResponse> {
     const { email, password } = data;
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email });
     if (!user) {
       throw new AppError('Invalid credentials', 401);
     }
 
-    const isPasswordValid = await user.comparePassword(password);
+    // Safely check password
+    let isPasswordValid = false;
+    if (typeof (user as any).comparePassword === 'function') {
+      isPasswordValid = await (user as any).comparePassword(password);
+    } else {
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    }
+
     if (!isPasswordValid) {
       throw new AppError('Invalid credentials', 401);
     }
 
-    const tokens = this.generateTokens(user._id.toString());
-    return { user, tokens };
+    const userObj = user.toObject();
+    delete (userObj as any).password;
+
+    const accessToken = this.generateToken(user._id.toString());
+    return { user: userObj as any, tokens: { accessToken } };
   }
 
-  private generateTokens(userId: string): { accessToken: string; refreshToken: string } {
-    const accessToken = jwt.sign(
-      { userId },
-      process.env.JWT_ACCESS_SECRET as string,
-      { expiresIn: (process.env.JWT_ACCESS_EXPIRY || '15m') as jwt.SignOptions['expiresIn'] }
-    );
-
-    const refreshToken = jwt.sign(
-      { userId },
-      process.env.JWT_REFRESH_SECRET as string,
-      { expiresIn: (process.env.JWT_REFRESH_EXPIRY || '7d') as jwt.SignOptions['expiresIn'] }
-    );
-
-    return { accessToken, refreshToken };
+  private generateToken(userId: string): string {
+    // Use the standard JWT_SECRET from your .env file
+    const secret = process.env.JWT_SECRET || 'fallback_secret_key';
+    return jwt.sign({ userId }, secret, { expiresIn: '7d' });
   }
 }
