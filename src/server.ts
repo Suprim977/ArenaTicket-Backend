@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config({ quiet: true });
 
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+
 import app from './app';
 import { connectDatabase } from './config/database';
 
