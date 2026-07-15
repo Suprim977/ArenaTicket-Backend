@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
 import { AppError } from '../../../middlewares/errorHandler';
 import { User } from '../../user/model/user.model';
 
@@ -13,11 +12,10 @@ export class AuthService {
       throw new AppError('Email already registered', 409);
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({ 
       name, 
       email: normalizedEmail, 
-      password: hashedPassword 
+      password 
     });
 
     const { password: _password, ...userObj } = user.toObject();
