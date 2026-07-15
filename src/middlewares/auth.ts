@@ -14,8 +14,8 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
       return next(new AppError('Authentication required', 401));
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
-    const user = await User.findById(decoded.id);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
+    const user = await User.findById(decoded.userId).select('-password');
 
     if (!user) {
       return next(new AppError('User not found', 401));
