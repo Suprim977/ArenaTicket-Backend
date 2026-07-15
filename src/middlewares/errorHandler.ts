@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodError } from 'zod';
 
 export class AppError extends Error {
   statusCode: number;
@@ -13,18 +12,6 @@ export class AppError extends Error {
 export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   let statusCode = 500;
   let message = 'Internal Server Error';
-
-  if (err instanceof ZodError) {
-    statusCode = 400;
-    message = err.issues
-      .map((issue) => issue.message)
-      .join(', ');
-  }
-
-  if ((err as { code?: number }).code === 11000) {
-    statusCode = 409;
-    message = 'Duplicate field value';
-  }
 
   if (err instanceof AppError) {
     statusCode = err.statusCode;

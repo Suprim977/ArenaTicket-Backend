@@ -1,39 +1,32 @@
 import jwt from 'jsonwebtoken';
+import { AuthRepository } from '../repository/auth.repository';
 import { AppError } from '../../../middlewares/errorHandler';
-import { User } from '../../user/model/user.model';
+import { IUser } from '../../user/model/user.model';
 
 export class AuthService {
-  async register(data: { name: string; email: string; password: string }) {
-    const { name, email, password } = data;
-    const normalizedEmail = email.trim().toLowerCase();
+  private authRepository: AuthRepository;
 
-    const existingUser = await User.findOne({ email: normalizedEmail });
+  constructor() {
+    this.authRepository = new AuthRepository();
+  }
+
+  async register(data: { name: string; email: string; password: string }): Promise<{ user: IUser; tokens: { accessToken: string; refreshToken: string } }> {
+    const { name, email, password } = data;
+
+    const existingUser = await this.authRepository.findByEmail(email);
     if (existingUser) {
       throw new AppError('Email already registered', 409);
     }
 
-    const user = await User.create({ 
-      name, 
-      email: normalizedEmail, 
-      password 
-    });
-
-    const { password: _password, ...userObj } = user.toObject();
-
-    const accessToken = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET || 'secret',
-      { expiresIn: '7d' }
-    );
-
-    return { user: userObj, tokens: { accessToken } };
+    const user = await this.authRepository.createUser({ name, email, password });
+    const tokens = this.generateTokens(user._id.toString());
+    return { user, tokens };
   }
 
-  async login(data: { email: string; password: string }) {
+  async login(data: { email: string; password: string }): Promise<{ user: IUser; tokens: { accessToken: string; refreshToken: string } }> {
     const { email, password } = data;
-    const normalizedEmail = email.trim().toLowerCase();
 
-    const user = await User.findOne({ email: normalizedEmail }).select('+password');
+    const user = await this.authRepository.findByEmail(email);
     if (!user) {
       throw new AppError('Invalid credentials', 401);
     }
@@ -43,14 +36,23 @@ export class AuthService {
       throw new AppError('Invalid credentials', 401);
     }
 
-    const { password: _password, ...userObj } = user.toObject();
+    const tokens = this.generateTokens(user._id.toString());
+    return { user, tokens };
+  }
 
+  private generateTokens(userId: string): { accessToken: string; refreshToken: string } {
     const accessToken = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET || 'secret',
-      { expiresIn: '7d' }
+      { userId },
+      process.env.JWT_ACCESS_SECRET as string,
+      { expiresIn: (process.env.JWT_ACCESS_EXPIRY || '15m') as jwt.SignOptions['expiresIn'] }
     );
 
-    return { user: userObj, tokens: { accessToken } };
+    const refreshToken = jwt.sign(
+      { userId },
+      process.env.JWT_REFRESH_SECRET as string,
+      { expiresIn: (process.env.JWT_REFRESH_EXPIRY || '7d') as jwt.SignOptions['expiresIn'] }
+    );
+
+    return { accessToken, refreshToken };
   }
 }

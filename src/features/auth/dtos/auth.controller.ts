@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
 import { loginSchema, registerSchema } from '../validation/validation';
 import { sendSuccess } from '../../../utils/response';
-import { AuthRequest } from '../../../middlewares/auth';
 
 export class AuthController {
   private authService: AuthService;
@@ -26,14 +25,6 @@ export class AuthController {
       const { email, password } = loginSchema.parse({ body: req.body }).body;
       const result = await this.authService.login({ email, password });
       sendSuccess(res, result, 'Login successful');
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  me = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      sendSuccess(res, req.user, 'Profile fetched successfully');
     } catch (error) {
       next(error);
     }
