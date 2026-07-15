@@ -13,7 +13,7 @@ export class AuthController {
   register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { name, email, password } = registerSchema.parse({ body: req.body }).body;
-      const result = await this.authService.register(name, email, password);
+      const result = await this.authService.register({ name, email, password });
       sendSuccess(res, result, 'User registered successfully', 201);
     } catch (error) {
       next(error);
@@ -23,7 +23,7 @@ export class AuthController {
   login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, password } = loginSchema.parse({ body: req.body }).body;
-      const result = await this.authService.login(email, password);
+      const result = await this.authService.login({ email, password });
       sendSuccess(res, result, 'Login successful');
     } catch (error) {
       next(error);
