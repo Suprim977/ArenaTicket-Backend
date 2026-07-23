@@ -1,4 +1,4 @@
-import { NextFunction, Request, RequestHandler, Response } from 'express';
+import { NextFunction, RequestHandler, Response } from 'express';
 
 type AsyncController = (req: any, res: Response, next: NextFunction) => Promise<unknown>;
 

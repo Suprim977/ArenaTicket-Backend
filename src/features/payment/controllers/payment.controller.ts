@@ -21,12 +21,12 @@ export class PaymentController {
       if (gateway === 'ESEWA') {
         result = await paymentService.initiateEsewaPayment(
           validatedData,
-          req.user._id
+          req.user!._id.toString()
         );
       } else if (gateway === 'KHALTI') {
         result = await paymentService.initiateKhaltiPayment(
           validatedData,
-          req.user._id
+          req.user!._id.toString()
         );
       }
 
@@ -99,7 +99,7 @@ export class PaymentController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const payments = await paymentService.getPaymentHistory(req.user._id);
+      const payments = await paymentService.getPaymentHistory(req.user!._id.toString());
       sendSuccess(res, payments, 'Payment history retrieved successfully');
     } catch (error) {
       next(error);

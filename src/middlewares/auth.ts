@@ -4,7 +4,7 @@ import { User, IUser } from '../models/User';
 import { AppError } from './errorHandler';
 
 export interface AuthRequest extends Request {
-  user?: any;
+  user?: IUser;
 }
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -26,7 +26,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 
     req.user = user;
     next();
-  } catch (error) {
+  } catch {
     next(new AppError('Invalid or expired token', 401));
   }
 };

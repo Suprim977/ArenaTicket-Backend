@@ -1,9 +1,8 @@
-import { User, IUser } from '../../user/model/user.model';
+import { User, IUser } from '../../../models/User';
 
 export class AuthRepository {
-  async createUser(userData: Partial<IUser>): Promise<IUser> {
-    const user = new User(userData);
-    return await user.save();
+  async createUser(userData: Pick<IUser, 'firstName' | 'lastName' | 'countryCode' | 'phoneNumber' | 'gender' | 'email' | 'password'>): Promise<IUser> {
+    return await User.create(userData);
   }
 
   async findByEmail(email: string): Promise<IUser | null> {
@@ -12,5 +11,9 @@ export class AuthRepository {
 
   async findById(id: string): Promise<IUser | null> {
     return await User.findById(id);
+  }
+
+  async findByPhone(countryCode: string, phoneNumber: string): Promise<IUser | null> {
+    return await User.findOne({ countryCode, phoneNumber });
   }
 }

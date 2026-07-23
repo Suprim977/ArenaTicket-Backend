@@ -5,12 +5,11 @@ export interface IBooking extends Document {
   userId: Types.ObjectId;
   eventId: Types.ObjectId;
   tier: string;
-  seatDetails: { section: string; row: string; seat: string };
+  section: string;
   quantity: number;
   subtotal: number;
-  bookingFee: number;
-  tax: number;
   totalAmount: number;
+  paymentMethod: 'esewa' | 'khalti' | 'card';
   status: 'pending' | 'confirmed' | 'cancelled';
   qrCodeData?: string;
 }
@@ -20,16 +19,11 @@ const bookingSchema = new Schema<IBooking>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   eventId: { type: Schema.Types.ObjectId, ref: 'Event', required: true, index: true },
   tier: { type: String, required: true, trim: true },
-  seatDetails: {
-    section: { type: String, required: true, trim: true },
-    row: { type: String, required: true, trim: true },
-    seat: { type: String, required: true, trim: true },
-  },
+  section: { type: String, required: true, trim: true },
   quantity: { type: Number, required: true, min: 1 },
   subtotal: { type: Number, required: true, min: 0 },
-  bookingFee: { type: Number, required: true, min: 0 },
-  tax: { type: Number, required: true, min: 0 },
   totalAmount: { type: Number, required: true, min: 0 },
+  paymentMethod: { type: String, enum: ['esewa', 'khalti', 'card'], required: true },
   status: { type: String, enum: ['pending', 'confirmed', 'cancelled'], default: 'pending', index: true },
   qrCodeData: { type: String, select: true },
 }, { timestamps: true, versionKey: false });

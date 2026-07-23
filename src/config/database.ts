@@ -2,10 +2,14 @@ import mongoose from 'mongoose';
 
 export const connectDatabase = async (): Promise<void> => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/arenaticket';
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+      throw new Error('MONGODB_URI is not configured');
+    }
 
     const connection = await mongoose.connect(mongoUri);
-    console.log(`MongoDB Connected: ${connection.connection.host}`);
+    console.log(`MongoDB connected: host=${connection.connection.host} database=${connection.connection.name}`);
+    console.log(`User collection: ${connection.connection.collection('users').collectionName}`);
     
   } catch (error) {
     console.error('MongoDB Connection Error:', error);

@@ -8,6 +8,9 @@ export interface UserProfile {
   id: string;
   firstName: string;
   lastName: string;
+  countryCode: string;
+  phoneNumber: string;
+  gender: 'male' | 'female' | 'other';
   email: string;
   role: 'user' | 'admin';
   profilePicture: string | null;
@@ -27,8 +30,20 @@ export class UserService {
 
   async updateProfile(
     userId: string,
-    data: { firstName?: string; lastName?: string }
+    data: {
+      firstName?: string;
+      lastName?: string;
+      countryCode?: string;
+      phoneNumber?: string;
+      gender?: 'male' | 'female' | 'other';
+    }
   ): Promise<UserProfile> {
+    const current = this.requireUser(await this.userRepository.findProfileById(userId));
+    const countryCode = data.countryCode ?? current.countryCode;
+    const phoneNumber = data.phoneNumber ?? current.phoneNumber;
+    if (countryCode === '+977' && !/^\d{10}$/.test(phoneNumber)) {
+      throw new AppError('Nepal phone number must be exactly 10 digits', 400);
+    }
     return this.requireUser(await this.userRepository.updateProfile(userId, data));
   }
 
@@ -85,6 +100,9 @@ export class UserService {
       id: user._id.toString(),
       firstName: user.firstName,
       lastName: user.lastName,
+      countryCode: user.countryCode,
+      phoneNumber: user.phoneNumber,
+      gender: user.gender,
       email: user.email,
       role: user.role,
       profilePicture: user.profilePicture,

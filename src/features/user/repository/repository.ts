@@ -1,11 +1,11 @@
 import { User, IUser } from '../../../models/User';
 
-export type ProfileUpdate = Partial<Pick<IUser, 'firstName' | 'lastName' | 'profilePicture'>>;
+export type ProfileUpdate = Partial<Pick<IUser, 'firstName' | 'lastName' | 'countryCode' | 'phoneNumber' | 'gender' | 'profilePicture'>>;
 
 export class UserRepository {
   async findProfileById(id: string): Promise<IUser | null> {
     return User.findById(id).select(
-      'firstName lastName email role profilePicture createdAt'
+      'firstName lastName countryCode phoneNumber gender email role profilePicture createdAt'
     );
   }
 
@@ -13,6 +13,6 @@ export class UserRepository {
     return User.findByIdAndUpdate(id, { $set: data }, {
       new: true,
       runValidators: true,
-    }).select('firstName lastName email role profilePicture createdAt');
+    }).select('firstName lastName countryCode phoneNumber gender email role profilePicture createdAt');
   }
 }

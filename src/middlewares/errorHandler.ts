@@ -12,7 +12,7 @@ export class AppError extends Error {
   }
 }
 
-export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
   let statusCode = 500;
   let message = 'Internal Server Error';
 
@@ -43,7 +43,10 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
   // MongoDB's unique index error is expected for an existing registration email.
   if ((err as { code?: number }).code === 11000) {
     statusCode = 409;
-    message = 'Email already registered';
+    const keyPattern = (err as { keyPattern?: Record<string, number> }).keyPattern || {};
+    message = keyPattern.countryCode || keyPattern.phoneNumber
+      ? 'Phone number already registered for this country code'
+      : 'Email already registered';
   }
 
   if (err instanceof mongoose.Error.ValidationError) {
@@ -63,8 +66,13 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
   }
 
   if (statusCode === 500) {
-    console.error('Unhandled API error', { method: req.method, path: req.originalUrl, error: err });
-    message = err.message || 'Unexpected server failure';
+    console.error('Unhandled API error', {
+      method: req.method,
+      path: req.originalUrl,
+      errorName: err.name,
+      message: err.message,
+    });
+    message = 'Internal Server Error';
   }
 
   res.status(statusCode).json({

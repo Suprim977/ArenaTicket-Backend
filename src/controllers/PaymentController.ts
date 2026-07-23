@@ -11,7 +11,7 @@ import { sendSuccess } from '../utils/response';
 
 const initiateSchema = z.object({
   bookingId: z.string(),
-  method: z.enum(['esewa', 'khalti', 'card'], { message: 'Invalid payment method' }),
+  method: z.enum(['esewa', 'khalti', 'card'], { message: 'Invalid payment method' }).optional(),
 });
 const verifySchema = z.object({
   transactionRef: z.string().min(1),
@@ -27,16 +27,20 @@ export class PaymentController {
     if (await Payment.exists({ bookingId: booking._id, status: 'pending' })) {
       throw new AppError('A payment is already pending for this booking', 409);
     }
-    const transactionRef = `${data.method.toUpperCase()}-${randomUUID()}`;
+    const method = data.method ?? booking.paymentMethod;
+    if (data.method && data.method !== booking.paymentMethod) {
+      throw new AppError('Payment method must match the booking payment method', 400);
+    }
+    const transactionRef = `${method.toUpperCase()}-${randomUUID()}`;
     const payment = await Payment.create({
       bookingId: booking._id,
       userId: req.user!._id,
-      method: data.method,
+      method,
       amount: booking.totalAmount,
       transactionRef,
     });
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
-    const paymentUrl = `${baseUrl}/mock-payments/${data.method}?transactionRef=${encodeURIComponent(transactionRef)}`;
+    const paymentUrl = `${baseUrl}/mock-payments/${method}?transactionRef=${encodeURIComponent(transactionRef)}`;
     sendSuccess(res, { payment, paymentUrl }, 'Payment initiated successfully', 201);
   };
 

@@ -173,7 +173,7 @@ export class PaymentService {
       }
 
       return payment;
-    } catch (error) {
+    } catch {
       throw new AppError('Payment verification failed', 400);
     }
   }
@@ -240,7 +240,7 @@ export class PaymentService {
       }
 
       return payment;
-    } catch (error) {
+    } catch {
       throw new AppError('Khalti payment verification failed', 400);
     }
   }
@@ -261,7 +261,6 @@ export class PaymentService {
   ): string {
     const data = `total_amount=${amount},transaction_uuid=${transactionId},product_code=${productCode}`;
     const secret = process.env.ESEWA_SECRET_KEY || 'test_secret';
-    const crypto = require('crypto');
     return crypto.createHmac('sha256', secret).update(data).digest('base64');
   }
 }
