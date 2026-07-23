@@ -12,6 +12,9 @@ export interface IUser extends Document {
   ticketsCount: number;
   eventsAttended: number;
   isActive: boolean;
+  profilePicture: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
 }
 
@@ -32,6 +35,7 @@ const userSchema = new Schema<IUser>({
   ticketsCount: { type: Number, default: 0, min: 0 },
   eventsAttended: { type: Number, default: 0, min: 0 },
   isActive: { type: Boolean, default: true },
+  profilePicture: { type: String, default: null },
 }, { timestamps: true, versionKey: false });
 
 userSchema.pre('save', async function () {

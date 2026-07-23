@@ -1,35 +1,121 @@
-import bcrypt from 'bcryptjs';
+import { promises as fs } from 'fs';
+import path from 'path';
 import { UserRepository } from '../repository/repository';
-import { IUser } from '../model/user.model';
+import { IUser } from '../../../models/User';
 import { AppError } from '../../../middlewares/errorHandler';
 
+export interface UserProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: 'user' | 'admin';
+  profilePicture: string | null;
+  createdAt: Date;
+}
+
 export class UserService {
-  private userRepository: UserRepository;
+  private readonly userRepository: UserRepository;
 
   constructor() {
     this.userRepository = new UserRepository();
   }
 
-  async updateProfile(userId: string, name: string): Promise<IUser | null> {
-    return await this.userRepository.updateProfile(userId, { name });
+  async getProfile(userId: string): Promise<UserProfile> {
+    return this.requireUser(await this.userRepository.findProfileById(userId));
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
-    const user = await this.userRepository.findById(userId);
-    
-    if (!user) {
+  async updateProfile(
+    userId: string,
+    data: { firstName?: string; lastName?: string }
+  ): Promise<UserProfile> {
+    return this.requireUser(await this.userRepository.updateProfile(userId, data));
+  }
+
+  async updateProfilePicture(userId: string, newPicturePath: string): Promise<UserProfile> {
+    const currentUser = await this.userRepository.findProfileById(userId);
+
+    if (!currentUser) {
+      await this.deleteLocalProfilePicture(newPicturePath);
       throw new AppError('User not found', 404);
     }
 
-    const isPasswordValid = await user.comparePassword(currentPassword);
-    
-    if (!isPasswordValid) {
-      throw new AppError('Current password is incorrect', 401);
+    let updatedUser: IUser | null;
+    try {
+      updatedUser = await this.userRepository.updateProfile(userId, {
+        profilePicture: newPicturePath,
+      });
+    } catch (error) {
+      await this.deleteLocalProfilePicture(newPicturePath);
+      throw error;
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-    
-    await this.userRepository.updateProfile(userId, { password: hashedPassword });
+    if (!updatedUser) {
+      await this.deleteLocalProfilePicture(newPicturePath);
+      throw new AppError('User not found', 404);
+    }
+
+    if (currentUser.profilePicture && currentUser.profilePicture !== newPicturePath) {
+      await this.deleteLocalProfilePicture(currentUser.profilePicture);
+    }
+
+    return this.requireUser(updatedUser);
+  }
+
+  async deleteProfilePicture(userId: string): Promise<UserProfile> {
+    const currentUser = this.requireUser(
+      await this.userRepository.findProfileById(userId)
+    );
+    const updatedUser = this.requireUser(
+      await this.userRepository.updateProfile(userId, { profilePicture: null })
+    );
+
+    if (currentUser.profilePicture) {
+      await this.deleteLocalProfilePicture(currentUser.profilePicture);
+    }
+
+    return updatedUser;
+  }
+
+  private requireUser(user: IUser | null): UserProfile {
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+    return {
+      id: user._id.toString(),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      profilePicture: user.profilePicture,
+      createdAt: user.createdAt,
+    };
+  }
+
+  private async deleteLocalProfilePicture(profilePicture: string): Promise<void> {
+    const uploadsRoot = path.resolve(process.cwd(), 'uploads');
+    const usersRoot = path.resolve(uploadsRoot, 'users');
+    const normalizedUrlPath = profilePicture.split('?')[0].replace(/\\/g, '/');
+    const expectedPrefix = '/uploads/users/';
+
+    if (!normalizedUrlPath.startsWith(expectedPrefix)) {
+      return;
+    }
+
+    const relativePath = normalizedUrlPath.slice('/uploads/'.length);
+    const absolutePath = path.resolve(uploadsRoot, relativePath);
+
+    if (!absolutePath.startsWith(`${usersRoot}${path.sep}`)) {
+      return;
+    }
+
+    try {
+      await fs.unlink(absolutePath);
+    } catch (error) {
+      const fileError = error as NodeJS.ErrnoException;
+      if (fileError.code !== 'ENOENT') {
+        throw new AppError('Unable to delete profile picture', 500);
+      }
+    }
   }
 }
