@@ -17,6 +17,10 @@ export class AuthController {
       const result = await this.authService.register({ name, email, password });
       sendSuccess(res, result, 'User registered successfully', 201);
     } catch (error) {
+      console.error('Registration error:', {
+        email: req.body?.email,
+        error: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : error,
+      });
       next(error);
     }
   };
@@ -27,6 +31,10 @@ export class AuthController {
       const result = await this.authService.login({ email, password });
       sendSuccess(res, result, 'Login successful');
     } catch (error) {
+      console.error('Login error:', {
+        email: req.body?.email,
+        error: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : error,
+      });
       next(error);
     }
   };

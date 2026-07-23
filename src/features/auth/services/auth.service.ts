@@ -4,6 +4,9 @@ import { AuthRepository } from '../repository/auth.repository';
 import { AppError } from '../../../middlewares/errorHandler';
 import { IUser } from '../../user/model/user.model';
 
+type SafeUser = Pick<IUser, '_id' | 'name' | 'email' | 'role' | 'isActive' | 'profilePicture'>;
+type AuthResult = { user: SafeUser; tokens: { accessToken: string; refreshToken: string } };
+
 export class AuthService {
   private authRepository: AuthRepository;
 
@@ -11,8 +14,14 @@ export class AuthService {
     this.authRepository = new AuthRepository();
   }
 
-  async register(data: { name: string; email: string; password: string }): Promise<{ user: IUser; tokens: { accessToken: string; refreshToken: string } }> {
-    const { name, email, password } = data;
+  async register(data: { name: string; email: string; password: string }): Promise<AuthResult> {
+    const name = data.name.trim();
+    const email = data.email.trim().toLowerCase();
+    const { password } = data;
+
+    // Validate token configuration before persisting a user. This prevents an
+    // account from being created when JWT creation would fail afterwards.
+    this.getJwtSecrets();
 
     const existingUser = await this.authRepository.findByEmail(email);
     if (existingUser) {
@@ -21,24 +30,29 @@ export class AuthService {
 
     const user = await this.authRepository.createUser({ name, email, password });
     const tokens = this.generateTokens(user._id.toString());
-    return { user, tokens };
+    return { user: this.toSafeUser(user), tokens };
   }
 
-  async login(data: { email: string; password: string }): Promise<{ user: IUser; tokens: { accessToken: string; refreshToken: string } }> {
-    const { email, password } = data;
+  async login(data: { email: string; password: string }): Promise<AuthResult> {
+    const email = data.email.trim().toLowerCase();
+    const { password } = data;
 
     const user = await this.authRepository.findByEmail(email);
     if (!user) {
-      throw new AppError('Invalid credentials', 401);
+      throw new AppError('Invalid email or password', 401);
     }
 
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      throw new AppError('Invalid credentials', 401);
+      throw new AppError('Invalid email or password', 401);
+    }
+
+    if (!user.isActive) {
+      throw new AppError('Account is inactive', 403);
     }
 
     const tokens = this.generateTokens(user._id.toString());
-    return { user, tokens };
+    return { user: this.toSafeUser(user), tokens };
   }
 
   async updateProfile(userId: string, data: { name?: string; email?: string }): Promise<Omit<IUser, 'password'>> {
@@ -95,18 +109,36 @@ export class AuthService {
   }
 
   private generateTokens(userId: string): { accessToken: string; refreshToken: string } {
+    const { accessSecret, refreshSecret } = this.getJwtSecrets();
     const accessToken = jwt.sign(
       { userId },
-      process.env.JWT_ACCESS_SECRET as string,
+      accessSecret,
       { expiresIn: (process.env.JWT_ACCESS_EXPIRY || '15m') as jwt.SignOptions['expiresIn'] }
     );
 
     const refreshToken = jwt.sign(
       { userId },
-      process.env.JWT_REFRESH_SECRET as string,
+      refreshSecret,
       { expiresIn: (process.env.JWT_REFRESH_EXPIRY || '7d') as jwt.SignOptions['expiresIn'] }
     );
 
     return { accessToken, refreshToken };
+  }
+
+  private getJwtSecrets(): { accessSecret: string; refreshSecret: string } {
+    // Support the existing JWT_SECRET setting while allowing separate secrets.
+    const accessSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+
+    if (!accessSecret || !refreshSecret) {
+      throw new AppError('Server authentication configuration is missing. Please contact support.', 500);
+    }
+
+    return { accessSecret, refreshSecret };
+  }
+
+  private toSafeUser(user: IUser): SafeUser {
+    const { _id, name, email, role, isActive, profilePicture } = user;
+    return { _id, name, email, role, isActive, profilePicture };
   }
 }

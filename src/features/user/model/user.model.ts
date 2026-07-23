@@ -17,6 +17,7 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: [true, 'Name is required'],
       trim: true,
+      minlength: [2, 'Name must be at least 2 characters'],
       maxlength: [50, 'Name cannot exceed 50 characters'],
     },
     email: {
@@ -25,6 +26,7 @@ const userSchema = new Schema<IUser>(
       unique: true,
       lowercase: true,
       trim: true,
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email address'],
     },
     password: {
       type: String,
@@ -36,10 +38,12 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: ['USER', 'ADMIN'],
       default: 'USER',
+      required: true,
     },
     isActive: {
       type: Boolean,
       default: true,
+      required: true,
     },
     profilePicture: {
       type: String,

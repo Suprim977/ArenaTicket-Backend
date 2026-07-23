@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '../features/user/model/user.model';
+import { User, IUser } from '../models/User';
 import { AppError } from './errorHandler';
 
 export interface AuthRequest extends Request {
@@ -14,8 +14,11 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
       return next(new AppError('Authentication required', 401));
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
-    const user = await User.findById(decoded.id);
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return next(new AppError('JWT configuration is missing', 500));
+    const decoded = jwt.verify(token, secret) as jwt.JwtPayload;
+    const userId = decoded.userId || decoded.id;
+    const user = await User.findById(userId);
 
     if (!user) {
       return next(new AppError('User not found', 401));
