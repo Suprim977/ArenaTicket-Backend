@@ -10,6 +10,7 @@ router.use(authenticate);
 router.get('/profile', asyncHandler(controller.getProfile));
 router.get('/dashboard', asyncHandler(controller.dashboard));
 router.patch('/profile', asyncHandler(controller.updateProfile));
+router.patch('/change-password', asyncHandler(controller.changePassword));
 router.get('/me', asyncHandler(controller.getProfile));
 router.put('/me', asyncHandler(controller.updateProfile));
 router.patch(

@@ -6,6 +6,8 @@ import { UserService } from '../features/user/service/user.service';
 import { updateProfileSchema } from '../features/user/validation/validation';
 import { Booking } from '../models/Booking';
 import { Event } from '../models/Event';
+import { User } from '../models/User';
+import { changePasswordSchema } from '../features/user/validation/validation';
 
 export class UserController {
   private readonly userService = new UserService();
@@ -19,6 +21,18 @@ export class UserController {
     const data = updateProfileSchema.parse(req.body);
     const user = await this.userService.updateProfile(this.getUserId(req), data);
     sendSuccess(res, { user }, 'Profile updated successfully');
+  };
+
+  changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+    const data = changePasswordSchema.parse(req.body);
+    const user = await User.findById(this.getUserId(req)).select('+password');
+    if (!user) throw new AppError('User not found', 404);
+    if (!(await user.comparePassword(data.currentPassword))) {
+      throw new AppError('Current password is incorrect', 400);
+    }
+    user.password = data.newPassword;
+    await user.save();
+    sendSuccess(res, null, 'Password changed successfully');
   };
 
   dashboard = async (req: AuthRequest, res: Response): Promise<void> => {

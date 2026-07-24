@@ -112,16 +112,54 @@ const run = async (): Promise<void> => {
         `${method} returns the canonical secure mock-payment URL`,
       );
 
+      const sessionResponse = await fetch(
+        `${origin}/api/v1/payments/mock-session/${initiated.payment._id}`
+          + `?token=${encodeURIComponent(paymentUrl.searchParams.get('token')!)}`,
+      );
+      const sessionBody = await sessionResponse.json() as {
+        data?: {
+          session?: {
+            amount: number;
+            method: PaymentMethod;
+            bookingRef: string;
+            tier: string;
+            quantity: number;
+            event: { title: string; venue: string };
+          };
+        };
+      };
+      const session = sessionBody.data?.session;
+      assert(
+        sessionResponse.status === 200
+          && session?.amount === initiated.payment.amount
+          && session.method === method
+          && session.event.title === 'Mock Payment Audit'
+          && session.event.venue === 'Audit Arena'
+          && session.tier === 'Normal'
+          && session.quantity === 1
+          && Boolean(session.bookingRef),
+        `${method} exposes only backend-owned checkout session data`,
+      );
+
       const page = await fetch(paymentUrl);
       const html = await page.text();
+      const formattedAmount = `Rs ${new Intl.NumberFormat('en-IN').format(initiated.payment.amount)}`;
+      const methodLabel = method === 'esewa' ? 'eSewa' : method === 'khalti' ? 'Khalti' : 'Card';
       assert(
         page.status === 200
           && page.headers.get('content-type')?.startsWith('text/html')
-          && html.includes(`Rs ${initiated.payment.amount.toFixed(2)}`)
+          && page.headers.get('content-security-policy')?.includes("style-src 'unsafe-inline'")
+          && html.includes(`Pay ${formattedAmount}`)
           && html.includes('Mock Payment Audit')
           && html.includes('Audit Arena')
-          && html.includes(method.toUpperCase()),
-        `${method} mock page shows event, venue, method, and backend amount`,
+          && html.includes(`${methodLabel} Mock Payment`)
+          && html.includes('University Project Payment Simulator')
+          && html.includes('Cancel Payment')
+          && html.includes('system-ui')
+          && html.includes('Pending')
+          && !html.includes(event.date.toISOString())
+          && !html.includes(`${initiated.payment.amount.toFixed(2)}</`),
+        `${method} mock page is branded and professionally formats safe payment data`,
       );
 
       const form = new URLSearchParams({

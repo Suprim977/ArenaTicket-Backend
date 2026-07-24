@@ -29,7 +29,20 @@ const bookingSchema = new Schema<IBooking>({
   paymentMethod: { type: String, enum: PAYMENT_METHODS, required: true },
   status: { type: String, enum: ['pending', 'confirmed', 'cancelled'], default: 'pending', index: true },
   qrCodeData: { type: String, select: true },
-}, { timestamps: true, versionKey: false });
+}, {
+  timestamps: true,
+  versionKey: false,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+});
+
+bookingSchema.virtual('payment', {
+  ref: 'Payment',
+  localField: '_id',
+  foreignField: 'bookingId',
+  justOne: true,
+  options: { sort: { createdAt: -1 } },
+});
 
 export const Booking: Model<IBooking> =
   (mongoose.models.Booking as Model<IBooking> | undefined) || mongoose.model<IBooking>('Booking', bookingSchema);

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { passwordSchema } from '../../auth/validation/validation';
 
 export const updateProfileSchema = z.object({
   firstName: z.string().trim().min(2).max(50).optional(),
@@ -17,6 +18,7 @@ export const updateProfileSchema = z.object({
 });
 
 export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1),
-  newPassword: z.string().min(6),
-});
+  currentPassword: z.string({ message: 'Current password is required' })
+    .min(1, 'Current password is required'),
+  newPassword: passwordSchema,
+}).strict();

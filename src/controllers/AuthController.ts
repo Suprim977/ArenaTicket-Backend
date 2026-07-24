@@ -1,7 +1,11 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { AuthService } from '../features/auth/services/auth.service';
-import { registerSchema } from '../features/auth/validation/validation';
+import {
+  forgotPasswordSchema,
+  registerSchema,
+  resetPasswordSchema,
+} from '../features/auth/validation/validation';
 import { sendSuccess } from '../utils/response';
 
 const loginSchema = z.object({
@@ -22,5 +26,21 @@ export class AuthController {
     const data = loginSchema.parse(req.body);
     const result = await this.authService.login(data.email, data.password);
     sendSuccess(res, result, 'Login successful');
+  };
+
+  forgotPassword = async (req: Request, res: Response): Promise<void> => {
+    const { email } = forgotPasswordSchema.parse(req.body);
+    const result = await this.authService.forgotPassword(email);
+    sendSuccess(
+      res,
+      result,
+      'If an account exists for this email, password reset instructions have been sent.',
+    );
+  };
+
+  resetPassword = async (req: Request, res: Response): Promise<void> => {
+    const data = resetPasswordSchema.parse(req.body);
+    await this.authService.resetPassword(data.token, data.newPassword);
+    sendSuccess(res, null, 'Password reset successfully');
   };
 }

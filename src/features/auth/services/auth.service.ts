@@ -1,7 +1,13 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'crypto';
 import { AuthRepository } from '../repository/auth.repository';
 import { AppError } from '../../../middlewares/errorHandler';
 import { IUser } from '../../../models/User';
+import {
+  DevelopmentResetDelivery,
+  PasswordResetDeliveryService,
+} from '../../../services/PasswordResetDeliveryService';
 
 export type RegistrationInput = {
   firstName: string;
@@ -31,6 +37,7 @@ export type SafeUser = {
 
 export class AuthService {
   private readonly authRepository = new AuthRepository();
+  private readonly passwordResetDelivery = new PasswordResetDeliveryService();
 
   async register(data: RegistrationInput): Promise<{ user: SafeUser; token: string; tokens: { accessToken: string } }> {
     this.getJwtSecret();
@@ -58,6 +65,42 @@ export class AuthService {
     return { user: this.toSafeUser(user), token, tokens: { accessToken: token } };
   }
 
+  async forgotPassword(email: string): Promise<{
+    devDelivery?: DevelopmentResetDelivery;
+  }> {
+    this.passwordResetDelivery.assertConfigured();
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = this.hashResetToken(token);
+    const expiresInMinutes = this.getResetExpiryMinutes();
+    const user = await this.authRepository.findByEmail(email);
+    if (user?.isActive) {
+      await this.authRepository.setPasswordResetToken(
+        user._id.toString(),
+        tokenHash,
+        new Date(Date.now() + expiresInMinutes * 60_000),
+      );
+    }
+
+    return {
+      devDelivery: this.passwordResetDelivery.createDevelopmentDelivery(
+        token,
+        expiresInMinutes,
+      ),
+    };
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const user = await this.authRepository.consumePasswordResetToken(
+      this.hashResetToken(token),
+      passwordHash,
+      new Date(),
+    );
+    if (!user) {
+      throw new AppError('This password reset link is invalid or has expired.', 400);
+    }
+  }
+
   private generateToken(userId: string): string {
     return jwt.sign(
       { userId },
@@ -70,6 +113,17 @@ export class AuthService {
     const secret = process.env.JWT_SECRET;
     if (!secret) throw new AppError('JWT configuration is missing', 500);
     return secret;
+  }
+
+  private hashResetToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private getResetExpiryMinutes(): number {
+    const configured = Number(process.env.PASSWORD_RESET_EXPIRY_MINUTES || 30);
+    return Number.isInteger(configured) && configured >= 5 && configured <= 60
+      ? configured
+      : 30;
   }
 
   private toSafeUser(user: IUser): SafeUser {

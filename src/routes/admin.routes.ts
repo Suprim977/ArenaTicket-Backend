@@ -10,6 +10,7 @@ const controller = new AdminController();
 router.use(authenticate, authorize('admin'));
 router.get('/dashboard', asyncHandler(controller.dashboard));
 router.get('/users', asyncHandler(controller.listUsers));
+router.post('/users', asyncHandler(controller.createUser));
 router.get('/users/:id', asyncHandler(controller.getUser));
 router.patch('/users/:id', asyncHandler(controller.updateUser));
 router.delete('/users/:id', asyncHandler(controller.deleteUser));

@@ -13,8 +13,14 @@ export class PaymentFulfillmentService {
     booking: IBooking;
     ticket: ITicket;
   }> {
+    if (payment.status !== 'success') {
+      throw new AppError('Only successful payments can be fulfilled', 409);
+    }
     const booking = await Booking.findById(payment.bookingId);
     if (!booking) throw new AppError('Booking not found', 404);
+    if (booking.userId.toString() !== payment.userId.toString()) {
+      throw new AppError('Payment does not belong to this booking', 403);
+    }
     if (money(payment.amount) !== money(booking.totalAmount)) {
       throw new AppError('Payment amount mismatch', 400);
     }

@@ -16,15 +16,29 @@ export class TicketRepository {
   getForUser(userId: string): Promise<ITicket[]> {
     return Ticket.find({ userId })
       .populate('eventId', 'title slug date location venue stadium imageUrl')
-      .populate('bookingId', 'bookingRef status totalAmount paymentMethod')
+      .populate({
+        path: 'bookingId',
+        select: 'bookingRef status totalAmount paymentMethod',
+        populate: {
+          path: 'payment',
+          select: 'method amount status transactionRef',
+        },
+      })
       .sort({ createdAt: -1 });
   }
 
   getAll(): Promise<ITicket[]> {
     return Ticket.find()
       .populate('eventId', 'title slug date location venue stadium imageUrl')
-      .populate('userId', 'firstName lastName email')
-      .populate('bookingId', 'bookingRef status totalAmount paymentMethod')
+      .populate('userId', 'firstName lastName email phoneNumber')
+      .populate({
+        path: 'bookingId',
+        select: 'bookingRef status totalAmount paymentMethod',
+        populate: {
+          path: 'payment',
+          select: 'method amount status transactionRef',
+        },
+      })
       .sort({ createdAt: -1 });
   }
 }

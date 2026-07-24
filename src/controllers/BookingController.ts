@@ -95,16 +95,32 @@ export class BookingController {
     const filter: Record<string, unknown> = { userId: req.user!._id };
     if (req.query.status) filter.status = req.query.status;
     const bookings = await Booking.find(filter)
-      .populate('eventId', 'title slug date location imageUrl')
+      .populate('eventId', 'title slug date location venue stadium imageUrl')
       .populate('userId', 'firstName lastName email')
+      .populate({
+        path: 'payment',
+        select: 'method amount status transactionRef ticketId',
+        populate: {
+          path: 'ticketId',
+          select: 'ticketNumber ticketTier section quantity status',
+        },
+      })
       .sort({ createdAt: -1 });
     sendSuccess(res, { bookings }, 'Bookings retrieved successfully');
   };
 
   getOne = async (req: AuthRequest, res: Response): Promise<void> => {
     const booking = await Booking.findOne({ bookingRef: req.params.bookingRef, userId: req.user!._id })
-      .populate('eventId', 'title slug date location imageUrl')
-      .populate('userId', 'firstName lastName email');
+      .populate('eventId', 'title slug date location venue stadium imageUrl')
+      .populate('userId', 'firstName lastName email')
+      .populate({
+        path: 'payment',
+        select: 'method amount status transactionRef ticketId',
+        populate: {
+          path: 'ticketId',
+          select: 'ticketNumber ticketTier section quantity status',
+        },
+      });
     if (!booking) throw new AppError('Booking not found', 404);
     sendSuccess(res, { booking }, 'Booking retrieved successfully');
   };

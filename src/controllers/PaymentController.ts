@@ -1,5 +1,6 @@
 import { randomUUID, timingSafeEqual } from 'crypto';
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { z } from 'zod';
 import { AuthRequest } from '../middlewares/auth';
 import { Booking } from '../models/Booking';
@@ -8,6 +9,7 @@ import { AppError } from '../middlewares/errorHandler';
 import { sendSuccess } from '../utils/response';
 import { PAYMENT_METHODS } from '../constants/payment';
 import { PaymentFulfillmentService, money } from '../services/PaymentFulfillmentService';
+import { Event } from '../models/Event';
 
 const initiateSchema = z.object({
   bookingId: z.string({ message: 'Booking ID is required.' }).trim().min(1, 'Booking ID is required.'),
@@ -16,6 +18,9 @@ const initiateSchema = z.object({
 const verifySchema = z.object({
   transactionRef: z.string().min(1),
   status: z.enum(['success', 'failed']),
+});
+const sessionAccessSchema = z.object({
+  token: z.string({ message: 'Payment token is required.' }).uuid('Invalid payment token.'),
 });
 
 export class PaymentController {
@@ -35,14 +40,22 @@ export class PaymentController {
     }
     const transactionRef = `${method.toUpperCase()}-${randomUUID()}`;
     const mockToken = randomUUID();
-    const payment = await Payment.create({
-      bookingId: booking._id,
-      userId: req.user!._id,
-      method,
-      amount: booking.totalAmount,
-      transactionRef,
-      mockToken,
-    });
+    let payment;
+    try {
+      payment = await Payment.create({
+        bookingId: booking._id,
+        userId: req.user!._id,
+        method,
+        amount: booking.totalAmount,
+        transactionRef,
+        mockToken,
+      });
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000) {
+        throw new AppError('A payment is already pending for this booking', 409);
+      }
+      throw error;
+    }
     const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
     const paymentUrl = `${baseUrl}/api/v1/mock-payments/${method}`
       + `?paymentId=${encodeURIComponent(payment._id.toString())}`
@@ -50,6 +63,48 @@ export class PaymentController {
     const paymentResponse = payment.toObject() as unknown as Record<string, unknown>;
     delete paymentResponse.mockToken;
     sendSuccess(res, { payment: paymentResponse, paymentUrl }, 'Payment initiated successfully', 201);
+  };
+
+  mockSession = async (req: Request, res: Response): Promise<void> => {
+    const paymentId = Array.isArray(req.params.paymentId)
+      ? req.params.paymentId[0]
+      : req.params.paymentId;
+    if (!mongoose.isValidObjectId(paymentId)) throw new AppError('Invalid payment ID', 400);
+    const { token } = sessionAccessSchema.parse(req.query);
+    const payment = await Payment.findById(paymentId).select('+mockToken');
+    if (!payment || !secureEqual(payment.mockToken, token)) {
+      throw new AppError('Payment not found', 404);
+    }
+    const booking = await Booking.findById(payment.bookingId);
+    if (!booking) throw new AppError('Booking not found', 404);
+    if (booking.userId.toString() !== payment.userId.toString()) {
+      throw new AppError('Payment does not belong to this booking', 403);
+    }
+    if (money(payment.amount) !== money(booking.totalAmount)) {
+      throw new AppError('Payment amount mismatch', 400);
+    }
+    const event = await Event.findById(booking.eventId)
+      .select('title date location venue stadium');
+    if (!event) throw new AppError('Event not found', 404);
+
+    sendSuccess(res, {
+      session: {
+        paymentId: payment._id,
+        method: payment.method,
+        amount: payment.amount,
+        status: payment.status,
+        bookingRef: booking.bookingRef,
+        tier: booking.tier,
+        section: booking.section,
+        quantity: booking.quantity,
+        event: {
+          title: event.title,
+          date: event.date,
+          location: event.location,
+          venue: event.venue || event.stadium || event.location,
+        },
+      },
+    }, 'Payment session retrieved successfully');
   };
 
   verify = async (req: Request, res: Response): Promise<void> => {
@@ -98,3 +153,10 @@ export class PaymentController {
     sendSuccess(res, result, 'Payment verified successfully');
   };
 }
+
+const secureEqual = (actual: string, expected: string): boolean => {
+  const actualBuffer = Buffer.from(actual);
+  const expectedBuffer = Buffer.from(expected);
+  return actualBuffer.length === expectedBuffer.length
+    && timingSafeEqual(actualBuffer, expectedBuffer);
+};

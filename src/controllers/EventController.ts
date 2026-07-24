@@ -5,6 +5,9 @@ import { Event } from '../models/Event';
 import { Booking } from '../models/Booking';
 import { AppError } from '../middlewares/errorHandler';
 import { sendSuccess } from '../utils/response';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { EVENT_UPLOADS_ROOT, UPLOADS_ROOT } from '../config/paths';
 
 const tierSchema = z.object({
   name: z.string().trim().min(1),
@@ -38,6 +41,49 @@ const eventSchema = z.object({
   tiers: z.array(tierSchema).min(1),
   relatedEvents: z.array(z.string()).default([]),
 });
+
+const parseMultipartBody = (body: Record<string, unknown>): Record<string, unknown> => {
+  const parsed = { ...body };
+  for (const field of ['ticketPrices', 'tiers', 'relatedEvents']) {
+    if (typeof parsed[field] === 'string') {
+      try {
+        parsed[field] = JSON.parse(parsed[field] as string);
+      } catch {
+        throw new AppError(`${field} must be valid JSON`, 400);
+      }
+    }
+  }
+  for (const field of ['prizePool']) {
+    if (typeof parsed[field] === 'string') parsed[field] = Number(parsed[field]);
+  }
+  if (typeof parsed.availability === 'string') {
+    if (!['true', 'false'].includes(parsed.availability)) {
+      throw new AppError('availability must be true or false', 400);
+    }
+    parsed.availability = parsed.availability === 'true';
+  }
+  return parsed;
+};
+
+const eventImagePath = (file: Express.Multer.File): string =>
+  `/uploads/events/${file.filename}`;
+
+const deleteLocalEventImage = async (imageUrl?: string | null): Promise<void> => {
+  const normalizedUrlPath = imageUrl?.split('?')[0].replace(/\\/g, '/');
+  if (!normalizedUrlPath?.startsWith('/uploads/events/')) return;
+
+  const relativePath = normalizedUrlPath.slice('/uploads/'.length);
+  const absolutePath = path.resolve(UPLOADS_ROOT, relativePath);
+  if (!absolutePath.startsWith(`${EVENT_UPLOADS_ROOT}${path.sep}`)) return;
+
+  try {
+    await fs.unlink(absolutePath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw new AppError('Unable to delete event image', 500);
+    }
+  }
+};
 
 export class EventController {
   list = async (req: Request, res: Response): Promise<void> => {
@@ -74,39 +120,64 @@ export class EventController {
   };
 
   create = async (req: Request, res: Response): Promise<void> => {
-    const data = eventSchema.parse(req.body);
-    if (await Event.exists({ slug: data.slug })) throw new AppError('Event slug already exists', 409);
-    const event = await Event.create({
-      ...data,
-      tiers: data.tiers.map(tier => ({
-        ...tier,
-        price: /^vip$/i.test(tier.name) ? data.ticketPrices.vip
-          : /^(normal|standard)$/i.test(tier.name) ? data.ticketPrices.normal
-          : tier.price,
-        available: tier.available ?? tier.capacity,
-      })),
-    });
-    sendSuccess(res, event, 'Event created successfully', 201);
+    const uploadedImage = req.file ? eventImagePath(req.file) : undefined;
+    try {
+      const data = eventSchema.parse({
+        ...parseMultipartBody(req.body),
+        ...(uploadedImage ? { imageUrl: uploadedImage } : {}),
+      });
+      if (await Event.exists({ slug: data.slug })) throw new AppError('Event slug already exists', 409);
+      const event = await Event.create({
+        ...data,
+        tiers: data.tiers.map(tier => ({
+          ...tier,
+          price: /^vip$/i.test(tier.name) ? data.ticketPrices.vip
+            : /^(normal|standard)$/i.test(tier.name) ? data.ticketPrices.normal
+            : tier.price,
+          available: tier.available ?? tier.capacity,
+        })),
+      });
+      sendSuccess(res, event, 'Event created successfully', 201);
+    } catch (error) {
+      await deleteLocalEventImage(uploadedImage);
+      throw error;
+    }
   };
 
   update = async (req: Request, res: Response): Promise<void> => {
-    if (!mongoose.isValidObjectId(req.params.id)) throw new AppError('Invalid event ID', 400);
-    const data = eventSchema.partial().parse(req.body);
-    const update: Record<string, unknown> = { ...data };
-    if (data.ticketPrices) {
-      update['tiers.$[normal].price'] = data.ticketPrices.normal;
-      update['tiers.$[vip].price'] = data.ticketPrices.vip;
+    const uploadedImage = req.file ? eventImagePath(req.file) : undefined;
+    let imagePersisted = false;
+    try {
+      if (!mongoose.isValidObjectId(req.params.id)) throw new AppError('Invalid event ID', 400);
+      const existingEvent = await Event.findById(req.params.id);
+      if (!existingEvent) throw new AppError('Event not found', 404);
+      const data = eventSchema.partial().parse({
+        ...parseMultipartBody(req.body),
+        ...(uploadedImage ? { imageUrl: uploadedImage } : {}),
+      });
+      const update: Record<string, unknown> = { ...data };
+      if (data.ticketPrices) {
+        update['tiers.$[normal].price'] = data.ticketPrices.normal;
+        update['tiers.$[vip].price'] = data.ticketPrices.vip;
+      }
+      const event = await Event.findByIdAndUpdate(req.params.id, update, {
+        new: true,
+        runValidators: true,
+        arrayFilters: data.ticketPrices ? [
+          { 'normal.name': { $regex: '^(normal|standard)$', $options: 'i' } },
+          { 'vip.name': { $regex: '^vip$', $options: 'i' } },
+        ] : undefined,
+      });
+      if (!event) throw new AppError('Event not found', 404);
+      imagePersisted = Boolean(uploadedImage);
+      if (uploadedImage && existingEvent.imageUrl !== uploadedImage) {
+        await deleteLocalEventImage(existingEvent.imageUrl);
+      }
+      sendSuccess(res, event, 'Event updated successfully');
+    } catch (error) {
+      if (!imagePersisted) await deleteLocalEventImage(uploadedImage);
+      throw error;
     }
-    const event = await Event.findByIdAndUpdate(req.params.id, update, {
-      new: true,
-      runValidators: true,
-      arrayFilters: data.ticketPrices ? [
-        { 'normal.name': { $regex: '^(normal|standard)$', $options: 'i' } },
-        { 'vip.name': { $regex: '^vip$', $options: 'i' } },
-      ] : undefined,
-    });
-    if (!event) throw new AppError('Event not found', 404);
-    sendSuccess(res, event, 'Event updated successfully');
   };
 
   remove = async (req: Request, res: Response): Promise<void> => {
@@ -116,6 +187,7 @@ export class EventController {
     }
     const event = await Event.findByIdAndDelete(req.params.id);
     if (!event) throw new AppError('Event not found', 404);
+    await deleteLocalEventImage(event.imageUrl);
     sendSuccess(res, null, 'Event deleted successfully');
   };
 }

@@ -26,6 +26,14 @@ const paymentSchema = new Schema<IPayment>({
 }, { timestamps: true, versionKey: false });
 
 paymentSchema.index({ bookingId: 1, status: 1 });
+paymentSchema.index(
+  { bookingId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: 'pending' },
+    name: 'one_pending_payment_per_booking',
+  },
+);
 
 export const Payment: Model<IPayment> =
   (mongoose.models.Payment as Model<IPayment> | undefined) || mongoose.model<IPayment>('Payment', paymentSchema);

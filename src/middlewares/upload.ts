@@ -3,7 +3,7 @@ import multer, { FileFilterCallback } from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { AppError } from './errorHandler';
-import { TOURNAMENT_UPLOADS_ROOT, USER_UPLOADS_ROOT } from '../config/paths';
+import { EVENT_UPLOADS_ROOT, TOURNAMENT_UPLOADS_ROOT, USER_UPLOADS_ROOT } from '../config/paths';
 
 const ensureDirectory = (directoryPath: string): void => {
   if (!fs.existsSync(directoryPath)) {
@@ -14,6 +14,9 @@ const ensureDirectory = (directoryPath: string): void => {
 const getUploadDirectory = (fieldName: string): string => {
   if (fieldName === 'banner') {
     return TOURNAMENT_UPLOADS_ROOT;
+  }
+  if (fieldName === 'eventImage') {
+    return EVENT_UPLOADS_ROOT;
   }
 
   return USER_UPLOADS_ROOT;
@@ -41,13 +44,13 @@ const fileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCall
     return;
   }
 
-  cb(new AppError('Only JPG, JPEG, PNG, and WEBP image files are allowed', 400));
+  cb(new AppError('Only JPG, JPEG, PNG and WEBP images are allowed.', 400));
 };
 
 export const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 3 * 1024 * 1024,
+    fileSize: 5 * 1024 * 1024,
   },
 });

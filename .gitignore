@@ -15,6 +15,11 @@ logs
 *.log
 npm-debug.log*
 
+# Automated/live audit artifacts
+.live-upload-audit*
+*.stdout.log
+*.stderr.log
+
 # OS files
 .DS_Store
 Thumbs.db

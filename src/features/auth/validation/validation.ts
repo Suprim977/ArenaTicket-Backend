@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+export const passwordSchema = z.string({ message: 'Password is required' })
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[a-z]/, 'Password must contain a lowercase letter')
+  .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+  .regex(/\d/, 'Password must contain a number')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain a special character');
+
 export const registerSchema = z.object({
   firstName: z.string({ message: 'First name is required' }).trim().min(1, 'First name is required').max(50),
   lastName: z.string({ message: 'Last name is required' }).trim().min(1, 'Last name is required').max(50),
@@ -10,12 +17,7 @@ export const registerSchema = z.object({
   gender: z.string({ message: 'Gender is required' }).trim().toLowerCase()
     .pipe(z.enum(['male', 'female', 'other'], { message: 'Gender must be male, female, or other' })),
   email: z.string({ message: 'Email is required' }).trim().toLowerCase().email('Invalid email address'),
-  password: z.string({ message: 'Password is required' })
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[a-z]/, 'Password must contain a lowercase letter')
-    .regex(/[A-Z]/, 'Password must contain an uppercase letter')
-    .regex(/\d/, 'Password must contain a number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain a special character'),
+  password: passwordSchema,
   confirmPassword: z.string({ message: 'Confirm password is required' }).min(1, 'Confirm password is required'),
   role: z.unknown().optional(),
 }).strict().superRefine((data, context) => {
@@ -27,6 +29,30 @@ export const registerSchema = z.object({
     });
   }
   if (data.password !== data.confirmPassword) {
+    context.addIssue({
+      code: 'custom',
+      path: ['confirmPassword'],
+      message: 'Confirm password must match password',
+    });
+  }
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string({ message: 'Email is required' })
+    .trim()
+    .toLowerCase()
+    .email('Invalid email address'),
+}).strict();
+
+export const resetPasswordSchema = z.object({
+  token: z.string({ message: 'Reset token is required' })
+    .trim()
+    .regex(/^[a-f0-9]{64}$/i, 'This password reset link is invalid or has expired.'),
+  newPassword: passwordSchema,
+  confirmPassword: z.string({ message: 'Confirm password is required' })
+    .min(1, 'Confirm password is required'),
+}).strict().superRefine((data, context) => {
+  if (data.newPassword !== data.confirmPassword) {
     context.addIssue({
       code: 'custom',
       path: ['confirmPassword'],

@@ -16,6 +16,8 @@ export interface IUser extends Document {
   eventsAttended: number;
   isActive: boolean;
   profilePicture: string | null;
+  passwordResetTokenHash?: string;
+  passwordResetExpiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
@@ -59,6 +61,8 @@ const userSchema = new Schema<IUser>({
   eventsAttended: { type: Number, default: 0, min: 0 },
   isActive: { type: Boolean, default: true },
   profilePicture: { type: String, default: null },
+  passwordResetTokenHash: { type: String, select: false, index: true },
+  passwordResetExpiresAt: { type: Date, select: false },
 }, { timestamps: true, versionKey: false });
 
 userSchema.index(

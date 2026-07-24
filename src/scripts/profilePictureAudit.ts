@@ -64,6 +64,7 @@ const run = async (): Promise<void> => {
     form.append('profilePicture', new Blob([jpegBytes], { type: 'image/jpeg' }), 'audit.jpg');
     const uploadResponse = await fetch(`${origin}/api/v1/users/profile/photo`, {
       method: 'PATCH',
+      signal: globalThis.AbortSignal.timeout(15_000),
       headers: {
         authorization: `Bearer ${token}`,
         origin: 'http://localhost:3000',
@@ -86,6 +87,25 @@ const run = async (): Promise<void> => {
       uploadBody.data?.user?.profilePicture === profilePicture,
       'Updated user contains the same profilePicture path',
     );
+    const profileResponse = await fetch(`${origin}/api/v1/users/profile`, {
+      signal: globalThis.AbortSignal.timeout(10_000),
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const profileBody = await profileResponse.json() as ApiBody;
+    assert(
+      profileResponse.status === 200
+        && profileBody.data?.user?.profilePicture === profilePicture,
+      'GET profile returns the persisted profilePicture path',
+    );
+    const secondProfileResponse = await fetch(`${origin}/api/v1/users/profile`, {
+      signal: globalThis.AbortSignal.timeout(10_000),
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const secondProfileBody = await secondProfileResponse.json() as ApiBody;
+    assert(
+      secondProfileBody.data?.user?.profilePicture === profilePicture,
+      'Repeated GET profile returns the same profilePicture path',
+    );
     console.log(`Returned profilePicture: ${profilePicture}`);
 
     uploadedAbsolutePath = path.resolve(
@@ -101,7 +121,7 @@ const run = async (): Promise<void> => {
 
     const exactImageUrl = `${origin}${profilePicture}`;
     console.log(`Verifying exact URL: ${exactImageUrl}`);
-    const imageResponse = await fetch(exactImageUrl);
+    const imageResponse = await fetch(exactImageUrl, { signal: globalThis.AbortSignal.timeout(10_000) });
     assert(imageResponse.status === 200, 'Exact returned profilePicture URL returns HTTP 200');
     assert(
       ['image/jpeg', 'image/png', 'image/webp'].includes(

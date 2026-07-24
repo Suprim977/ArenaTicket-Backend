@@ -18,7 +18,11 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
 
   if (err instanceof multer.MulterError) {
     statusCode = 400;
-    message = err.code === 'LIMIT_FILE_SIZE' ? 'File size must not exceed 3MB' : err.message;
+    message = err.code === 'LIMIT_FILE_SIZE'
+      ? (req.originalUrl.includes('/events')
+        ? 'Event image must be 5 MB or smaller.'
+        : 'Profile picture must be 5 MB or smaller.')
+      : err.message;
   }
 
   if (err instanceof AppError) {
