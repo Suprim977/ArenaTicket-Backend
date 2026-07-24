@@ -98,6 +98,18 @@ export class AdminController {
     sendSuccess(res, { bookings }, 'Bookings retrieved successfully');
   };
 
+  listPayments = async (_req: AuthRequest, res: Response): Promise<void> => {
+    const payments = await Payment.find()
+      .populate('userId', 'firstName lastName email phoneNumber')
+      .populate({
+        path: 'bookingId',
+        populate: { path: 'eventId', select: 'title slug date location imageUrl' },
+      })
+      .populate('ticketId')
+      .sort({ createdAt: -1 });
+    sendSuccess(res, { payments }, 'Payments retrieved successfully');
+  };
+
   getBooking = async (req: AuthRequest, res: Response): Promise<void> => {
     const identifier = this.getParam(req.params.identifier);
     const filter = mongoose.isValidObjectId(identifier)

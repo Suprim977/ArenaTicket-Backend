@@ -16,5 +16,6 @@ router.delete('/users/:id', asyncHandler(controller.deleteUser));
 router.get('/bookings', asyncHandler(controller.listBookings));
 router.get('/bookings/:identifier', asyncHandler(controller.getBooking));
 router.patch('/bookings/:identifier/status', asyncHandler(controller.updateBookingStatus));
+router.get('/payments', asyncHandler(controller.listPayments));
 
 export default router;

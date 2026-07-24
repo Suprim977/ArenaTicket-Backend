@@ -181,6 +181,64 @@ const run = async (): Promise<void> => {
     }
     createdUserIds.push(registered._id);
     console.log('PASS 13. Registered role is user');
+
+    const storedRegistration = await User.findById(registered._id).select('+password').lean();
+    if (
+      !storedRegistration
+      || !storedRegistration.password.startsWith('$2')
+      || storedRegistration.password === 'AuditPass1!'
+      || Object.prototype.hasOwnProperty.call(storedRegistration, 'confirmPassword')
+    ) {
+      throw new Error('Registered password was not safely persisted');
+    }
+    console.log('PASS Registration stores a bcrypt hash and never stores confirmPassword');
+
+    assertStatus((await request('/auth/register', 'POST', undefined, {
+      firstName: 'Duplicate',
+      lastName: 'Email',
+      countryCode: '+977',
+      phoneNumber: `94${suffix.slice(-8)}`,
+      gender: 'other',
+      email: registrationEmail,
+      password: 'AuditPass1!',
+      confirmPassword: 'AuditPass1!',
+    })).status, 409, 'Duplicate email is rejected');
+    assertStatus((await request('/auth/register', 'POST', undefined, {
+      firstName: 'Duplicate',
+      lastName: 'Phone',
+      countryCode: '+977',
+      phoneNumber: registered.phoneNumber,
+      gender: 'other',
+      email: `different-${suffix}@example.com`,
+      password: 'AuditPass1!',
+      confirmPassword: 'AuditPass1!',
+    })).status, 409, 'Duplicate phone is rejected');
+
+    const login = await request('/auth/login', 'POST', undefined, {
+      email: registrationEmail,
+      password: 'AuditPass1!',
+    });
+    assertStatus(login.status, 200, 'Registered user logs in');
+    const loginData = login.json.data as {
+      user: { _id: string; role: string };
+      token: string;
+      tokens: { accessToken: string };
+    };
+    if (
+      loginData.user._id !== registered._id.toString()
+      || loginData.user.role !== 'user'
+      || !loginData.token
+      || loginData.tokens.accessToken !== loginData.token
+    ) {
+      throw new Error('Login did not return the authenticated user, role, and access token');
+    }
+    assertStatus((await request('/users/profile', 'GET', loginData.token)).status, 200, 'Login JWT accesses a protected endpoint');
+
+    assertStatus((await request('/admin/payments', 'GET', adminToken)).status, 200, 'Admin views all payments');
+    assertStatus((await request('/tickets', 'GET', adminToken)).status, 200, 'Admin views all tickets');
+    assertStatus((await request('/admin/users', 'GET', userToken)).status, 403, 'User cannot list all users');
+    assertStatus((await request('/admin/payments', 'GET', userToken)).status, 403, 'User cannot list all payments');
+    assertStatus((await request('/tickets', 'GET', userToken)).status, 403, 'User cannot list all tickets');
   } finally {
     await Booking.deleteMany({ _id: { $in: createdBookingIds } });
     await Event.deleteMany({ _id: { $in: createdEventIds } });

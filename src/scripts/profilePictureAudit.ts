@@ -110,6 +110,39 @@ const run = async (): Promise<void> => {
       'Static response has a supported image Content-Type',
     );
 
+    const firstUploadedPath = uploadedAbsolutePath;
+    const replacementForm = new FormData();
+    replacementForm.append('profilePicture', new Blob([jpegBytes], { type: 'image/jpeg' }), 'replacement.jpg');
+    const replacementResponse = await fetch(`${origin}/api/v1/users/profile/photo`, {
+      method: 'PATCH',
+      headers: { authorization: `Bearer ${token}` },
+      body: replacementForm,
+    });
+    const replacementBody = await replacementResponse.json() as ApiBody;
+    const replacementPicture = replacementBody.data?.profilePicture;
+    assert(
+      replacementResponse.status === 200
+        && typeof replacementPicture === 'string'
+        && replacementPicture !== profilePicture,
+      'A profile picture can be replaced',
+    );
+    uploadedAbsolutePath = path.resolve(
+      USER_UPLOADS_ROOT,
+      replacementPicture.slice('/uploads/users/'.length),
+    );
+    await assertFileMissing(firstUploadedPath);
+
+    const missingResponse = await fetch(`${origin}/api/v1/users/profile/photo`, {
+      method: 'PATCH',
+      headers: { authorization: `Bearer ${token}` },
+      body: new FormData(),
+    });
+    const missingBody = await missingResponse.json() as ApiBody;
+    assert(
+      missingResponse.status === 400 && Boolean(missingBody.message),
+      'Missing profilePicture returns a readable HTTP 400',
+    );
+
     const invalidForm = new FormData();
     invalidForm.append('profilePicture', new Blob(['not an image'], { type: 'text/plain' }), 'audit.txt');
     const invalidResponse = await fetch(`${origin}/api/v1/users/profile/photo`, {

@@ -17,6 +17,7 @@
     "test:booking-payment": "tsx src/scripts/bookingPaymentAudit.ts",
     "test:mock-payments": "tsx src/scripts/mockPaymentAudit.ts",
     "test:profile-picture": "tsx src/scripts/profilePictureAudit.ts",
+    "test": "npm run test:security && npm run test:booking-payment && npm run test:mock-payments && npm run test:profile-picture",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
