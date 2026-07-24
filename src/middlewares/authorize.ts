@@ -10,7 +10,10 @@ export const authorize = (...roles: string[]) => {
 
     const normalizedRole = String(req.user.role).toLowerCase();
     if (!roles.map(role => role.toLowerCase()).includes(normalizedRole)) {
-      return next(new AppError('You do not have permission to perform this action', 403));
+      const message = roles.some(role => role.toLowerCase() === 'admin')
+        ? 'Administrator access required.'
+        : 'You do not have permission to perform this action';
+      return next(new AppError(message, 403));
     }
 
     next();

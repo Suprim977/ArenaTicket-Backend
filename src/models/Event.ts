@@ -13,8 +13,17 @@ export interface IEvent extends Document {
   category?: string;
   date: Date;
   location: string;
+  venue?: string;
+  stadium?: string;
+  time?: string;
   description: string;
   imageUrl: string;
+  status: 'draft' | 'published' | 'cancelled' | 'completed';
+  availability: boolean;
+  ticketPrices: {
+    normal: number;
+    vip: number;
+  };
   prizePool: number;
   format: string;
   tiers: IEventTier[];
@@ -23,7 +32,7 @@ export interface IEvent extends Document {
 
 const tierSchema = new Schema<IEventTier>({
   name: { type: String, required: true, trim: true },
-  price: { type: Number, required: true, min: 0 },
+  price: { type: Number, required: true, min: 0.01 },
   capacity: { type: Number, required: true, min: 1 },
   available: { type: Number, required: true, min: 0 },
 }, { _id: false });
@@ -34,8 +43,22 @@ const eventSchema = new Schema<IEvent>({
   category: { type: String, trim: true, lowercase: true, index: true },
   date: { type: Date, required: true, index: true },
   location: { type: String, required: true, trim: true },
+  venue: { type: String, trim: true },
+  stadium: { type: String, trim: true },
+  time: { type: String, trim: true },
   description: { type: String, required: true, trim: true },
   imageUrl: { type: String, required: true, trim: true },
+  status: {
+    type: String,
+    enum: ['draft', 'published', 'cancelled', 'completed'],
+    default: 'published',
+    index: true,
+  },
+  availability: { type: Boolean, default: true },
+  ticketPrices: {
+    normal: { type: Number, required: true, min: 0.01, default: 600 },
+    vip: { type: Number, required: true, min: 0.01, default: 1500 },
+  },
   prizePool: { type: Number, required: true, min: 0 },
   format: { type: String, required: true, trim: true },
   tiers: { type: [tierSchema], required: true, validate: [(value: IEventTier[]) => value.length > 0, 'At least one tier is required'] },

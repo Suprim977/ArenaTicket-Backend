@@ -13,7 +13,7 @@ export class AuthController {
   private readonly authService = new AuthService();
 
   register = async (req: Request, res: Response): Promise<void> => {
-    const { confirmPassword: _confirmPassword, ...data } = registerSchema.parse(req.body);
+    const { confirmPassword: _confirmPassword, role: _role, ...data } = registerSchema.parse(req.body);
     const result = await this.authService.register(data);
     sendSuccess(res, result, 'User registered successfully', 201);
   };

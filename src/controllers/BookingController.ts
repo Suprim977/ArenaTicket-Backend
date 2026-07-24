@@ -22,7 +22,7 @@ const bookingSchema = z.object({
 }).passthrough().transform((data, context) => {
   const rawTier = data.ticketTier ?? data.tier;
   const normalizedTier = rawTier?.trim().toLowerCase();
-  const tier: keyof typeof PRICES | undefined =
+  const tier: 'VIP' | 'Normal' | undefined =
     normalizedTier === 'vip' ? 'VIP' : normalizedTier === 'normal' ? 'Normal' : undefined;
   const section = data.section ?? data.seatDetails?.section;
   if (!tier) {
@@ -34,8 +34,7 @@ const bookingSchema = z.object({
   return { eventId: data.eventId, tier: tier!, section: section!, quantity: data.quantity, paymentMethod: data.paymentMethod };
 });
 
-const PRICES = { VIP: 1500, Normal: 600 } as const;
-const tierPattern = (tier: keyof typeof PRICES): RegExp =>
+const tierPattern = (tier: 'VIP' | 'Normal'): RegExp =>
   tier === 'Normal' ? /^(normal|standard)$/i : /^vip$/i;
 
 export class BookingController {
@@ -56,7 +55,10 @@ export class BookingController {
       throw new AppError('Not enough tickets available for this tier', 409);
     }
 
-    const totalAmount = PRICES[data.tier] * data.quantity;
+    const unitPrice = data.tier === 'VIP'
+      ? event.ticketPrices.vip
+      : event.ticketPrices.normal;
+    const totalAmount = unitPrice * data.quantity;
     try {
       let booking;
       for (let attempt = 0; attempt < 5; attempt += 1) {

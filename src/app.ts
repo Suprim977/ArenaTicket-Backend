@@ -12,6 +12,7 @@ import bookingRoutes from './routes/booking.routes';
 import userRoutes from './routes/user.routes';
 import paymentRoutes from './routes/payment.routes';
 import uploadRoutes from './features/upload/routes/upload.route';
+import adminRoutes from './routes/admin.routes';
 
 // Import middleware
 import { errorHandler } from './middlewares/errorHandler';
@@ -46,6 +47,7 @@ app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/upload', uploadRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // Error handling
 app.use(errorHandler);

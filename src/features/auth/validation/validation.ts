@@ -17,6 +17,7 @@ export const registerSchema = z.object({
     .regex(/\d/, 'Password must contain a number')
     .regex(/[^A-Za-z0-9]/, 'Password must contain a special character'),
   confirmPassword: z.string({ message: 'Confirm password is required' }).min(1, 'Confirm password is required'),
+  role: z.unknown().optional(),
 }).strict().superRefine((data, context) => {
   if (data.countryCode === '+977' && !/^\d{10}$/.test(data.phoneNumber)) {
     context.addIssue({
