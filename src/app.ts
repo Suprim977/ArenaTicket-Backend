@@ -21,7 +21,7 @@ const app: Application = express();
 
 // Security & Performance middleware
 app.use(helmet());
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3001').split(',').map((origin) => origin.trim());
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000').split(',').map((origin) => origin.trim());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
