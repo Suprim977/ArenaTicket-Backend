@@ -1,4 +1,5 @@
 import mongoose, { Document, Model, Schema, Types } from 'mongoose';
+import { PAYMENT_METHODS, PaymentMethod } from '../constants/payment';
 
 export interface IBooking extends Document {
   bookingRef: string;
@@ -9,7 +10,7 @@ export interface IBooking extends Document {
   quantity: number;
   subtotal: number;
   totalAmount: number;
-  paymentMethod: 'esewa' | 'khalti' | 'card';
+  paymentMethod: PaymentMethod;
   status: 'pending' | 'confirmed' | 'cancelled';
   qrCodeData?: string;
 }
@@ -23,7 +24,7 @@ const bookingSchema = new Schema<IBooking>({
   quantity: { type: Number, required: true, min: 1 },
   subtotal: { type: Number, required: true, min: 0 },
   totalAmount: { type: Number, required: true, min: 0 },
-  paymentMethod: { type: String, enum: ['esewa', 'khalti', 'card'], required: true },
+  paymentMethod: { type: String, enum: PAYMENT_METHODS, required: true },
   status: { type: String, enum: ['pending', 'confirmed', 'cancelled'], default: 'pending', index: true },
   qrCodeData: { type: String, select: true },
 }, { timestamps: true, versionKey: false });

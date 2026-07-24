@@ -1,11 +1,14 @@
 import { Router } from 'express';
 import { TicketController } from '../dtos/ticket.controller';
 import { authenticate } from '../../../middlewares/auth';
+import { authorize } from '../../../middlewares/authorize';
+import { asyncHandler } from '../../../utils/asyncHandler';
 
 const router = Router();
-const ticketController = new TicketController();
+const controller = new TicketController();
 
-router.post('/', authenticate, ticketController.bookTicket);
-router.get('/my-tickets', authenticate, ticketController.getMyTickets);
+router.get('/my', authenticate, asyncHandler(controller.getMyTickets));
+router.get('/verify/:token', authenticate, authorize('admin'), asyncHandler(controller.verifyTicket));
+router.get('/', authenticate, authorize('admin'), asyncHandler(controller.getAllTickets));
 
 export default router;

@@ -30,9 +30,9 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
     statusCode = 400;
     const issue = err.issues[0];
     const fieldName = issue?.path[issue.path.length - 1];
-    message = issue?.code === 'invalid_type' && fieldName
-      ? `Missing field: ${String(fieldName)}`
-      : issue?.message || 'Invalid request data';
+    message = issue?.message || (fieldName
+      ? `Invalid field: ${String(fieldName)}`
+      : 'Invalid request data');
   }
 
   if (err instanceof SyntaxError && 'body' in err) {
@@ -44,9 +44,19 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
   if ((err as { code?: number }).code === 11000) {
     statusCode = 409;
     const keyPattern = (err as { keyPattern?: Record<string, number> }).keyPattern || {};
-    message = keyPattern.countryCode || keyPattern.phoneNumber
-      ? 'Phone number already registered for this country code'
-      : 'Email already registered';
+    if (keyPattern.countryCode || keyPattern.phoneNumber) {
+      message = 'Phone number already registered for this country code';
+    } else if (keyPattern.email) {
+      message = 'Email already registered';
+    } else if (keyPattern.transactionRef) {
+      message = 'Payment transaction already exists';
+    } else if (keyPattern.bookingId) {
+      message = 'A ticket already exists for this booking';
+    } else if (keyPattern.ticketNumber || keyPattern.qrToken) {
+      message = 'Ticket identifier already exists';
+    } else {
+      message = 'Duplicate record';
+    }
   }
 
   if (err instanceof mongoose.Error.ValidationError) {

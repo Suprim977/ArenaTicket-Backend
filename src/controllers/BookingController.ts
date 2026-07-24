@@ -7,6 +7,7 @@ import { Event } from '../models/Event';
 import { AppError } from '../middlewares/errorHandler';
 import { generateBookingRef } from '../utils/bookingRef';
 import { sendSuccess } from '../utils/response';
+import { PAYMENT_METHODS } from '../constants/payment';
 
 const bookingSchema = z.object({
   eventId: z.string({ message: 'Event ID is required' }).trim().min(1, 'Event ID is required'),
@@ -15,8 +16,8 @@ const bookingSchema = z.object({
   section: z.string().trim().optional(),
   seatDetails: z.object({ section: z.string().trim().min(1) }).passthrough().optional(),
   quantity: z.coerce.number({ message: 'Quantity must be a number' }).int('Quantity must be a whole number').min(1).max(10),
-  paymentMethod: z.string({ message: 'Payment method is required' }).trim().toLowerCase()
-    .pipe(z.enum(['esewa', 'khalti', 'card'], { message: 'Payment method must be esewa, khalti, or card' })),
+  paymentMethod: z.string({ message: 'Payment method is required.' }).trim().toLowerCase()
+    .pipe(z.enum(PAYMENT_METHODS, { message: 'Invalid payment method.' })),
   amount: z.never({ message: 'Amount is calculated by the backend and must not be sent' }).optional(),
   totalAmount: z.never({ message: 'Amount is calculated by the backend and must not be sent' }).optional(),
 }).passthrough().transform((data, context) => {

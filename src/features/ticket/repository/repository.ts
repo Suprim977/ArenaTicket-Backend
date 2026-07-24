@@ -1,12 +1,29 @@
 import { Ticket, ITicket } from '../model/ticket.model';
 
 export class TicketRepository {
-  async createTicket(data: Partial<ITicket>): Promise<ITicket> {
-    const ticket = new Ticket(data);
-    return await ticket.save();
+  create(data: Partial<ITicket>): Promise<ITicket> {
+    return Ticket.create(data);
   }
 
-  async getMyTickets(userId: string): Promise<ITicket[]> {
-    return await Ticket.find({ user: userId }).populate('tournament', 'title date location');
+  findByBooking(bookingId: string): Promise<ITicket | null> {
+    return Ticket.findOne({ bookingId });
+  }
+
+  findByToken(qrToken: string): Promise<ITicket | null> {
+    return Ticket.findOne({ qrToken });
+  }
+
+  getForUser(userId: string): Promise<ITicket[]> {
+    return Ticket.find({ userId })
+      .populate('eventId', 'title slug date location venue stadium imageUrl')
+      .sort({ createdAt: -1 });
+  }
+
+  getAll(): Promise<ITicket[]> {
+    return Ticket.find()
+      .populate('eventId', 'title slug date location venue stadium imageUrl')
+      .populate('userId', 'firstName lastName email')
+      .populate('bookingId', 'bookingRef status totalAmount paymentMethod')
+      .sort({ createdAt: -1 });
   }
 }
