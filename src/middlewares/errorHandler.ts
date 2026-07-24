@@ -18,7 +18,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
 
   if (err instanceof multer.MulterError) {
     statusCode = 400;
-    message = err.code === 'LIMIT_FILE_SIZE' ? 'File size must not exceed 5MB' : err.message;
+    message = err.code === 'LIMIT_FILE_SIZE' ? 'File size must not exceed 3MB' : err.message;
   }
 
   if (err instanceof AppError) {

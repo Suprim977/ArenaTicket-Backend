@@ -17,8 +17,11 @@ export default [
       },
       globals: {
         Buffer: 'readonly',
+        Blob: 'readonly',
+        FormData: 'readonly',
         NodeJS: 'readonly',
         Express: 'readonly',
+        __dirname: 'readonly',
         console: 'readonly',
         fetch: 'readonly',
         process: 'readonly',

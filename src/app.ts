@@ -4,7 +4,6 @@ import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import path from 'path';
 
 import authRoutes from './routes/auth.routes';
 import eventRoutes from './routes/event.routes';
@@ -17,6 +16,7 @@ import adminRoutes from './routes/admin.routes';
 // Import middleware
 import { errorHandler } from './middlewares/errorHandler';
 import { sendSuccess } from './utils/response';
+import { UPLOADS_ROOT } from './config/paths';
 
 const app: Application = express();
 
@@ -28,7 +28,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(compression());
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/uploads', express.static(UPLOADS_ROOT));
 
 // Logging
 if (process.env.NODE_ENV !== 'test') {

@@ -3,6 +3,7 @@ import multer, { FileFilterCallback } from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { AppError } from './errorHandler';
+import { TOURNAMENT_UPLOADS_ROOT, USER_UPLOADS_ROOT } from '../config/paths';
 
 const ensureDirectory = (directoryPath: string): void => {
   if (!fs.existsSync(directoryPath)) {
@@ -12,10 +13,10 @@ const ensureDirectory = (directoryPath: string): void => {
 
 const getUploadDirectory = (fieldName: string): string => {
   if (fieldName === 'banner') {
-    return path.join(process.cwd(), 'uploads', 'tournaments');
+    return TOURNAMENT_UPLOADS_ROOT;
   }
 
-  return path.join(process.cwd(), 'uploads', 'users');
+  return USER_UPLOADS_ROOT;
 };
 
 const storage = multer.diskStorage({
@@ -47,6 +48,6 @@ export const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 3 * 1024 * 1024,
   },
 });

@@ -3,6 +3,7 @@ import path from 'path';
 import { UserRepository } from '../repository/repository';
 import { IUser } from '../../../models/User';
 import { AppError } from '../../../middlewares/errorHandler';
+import { UPLOADS_ROOT, USER_UPLOADS_ROOT } from '../../../config/paths';
 
 export interface UserProfile {
   id: string;
@@ -111,8 +112,6 @@ export class UserService {
   }
 
   private async deleteLocalProfilePicture(profilePicture: string): Promise<void> {
-    const uploadsRoot = path.resolve(process.cwd(), 'uploads');
-    const usersRoot = path.resolve(uploadsRoot, 'users');
     const normalizedUrlPath = profilePicture.split('?')[0].replace(/\\/g, '/');
     const expectedPrefix = '/uploads/users/';
 
@@ -121,9 +120,9 @@ export class UserService {
     }
 
     const relativePath = normalizedUrlPath.slice('/uploads/'.length);
-    const absolutePath = path.resolve(uploadsRoot, relativePath);
+    const absolutePath = path.resolve(UPLOADS_ROOT, relativePath);
 
-    if (!absolutePath.startsWith(`${usersRoot}${path.sep}`)) {
+    if (!absolutePath.startsWith(`${USER_UPLOADS_ROOT}${path.sep}`)) {
       return;
     }
 
