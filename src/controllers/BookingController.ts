@@ -70,6 +70,7 @@ export class BookingController {
             eventId: data.eventId,
             tier: data.tier,
             section: data.section,
+            unitPrice,
             quantity: data.quantity,
             subtotal: totalAmount,
             totalAmount,

@@ -150,6 +150,7 @@ const run = async (): Promise<void> => {
       eventId,
       tier: 'Normal',
       section: 'B',
+      unitPrice: 700,
       quantity: 1,
       subtotal: 700,
       totalAmount: 700,

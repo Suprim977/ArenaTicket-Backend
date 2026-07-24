@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { PAYMENT_METHODS, PaymentMethod } from '../constants/payment';
 import { AppError } from '../middlewares/errorHandler';
 import { Booking } from '../models/Booking';
+import { Event } from '../models/Event';
 import { Payment } from '../models/Payment';
 import { PaymentFulfillmentService } from '../services/PaymentFulfillmentService';
 
@@ -19,7 +20,7 @@ export class MockPaymentController {
   show = async (req: Request, res: Response): Promise<void> => {
     const method = this.parseMethod(req.params.method);
     const access = paymentAccessSchema.parse(req.query);
-    const { payment, booking } = await this.requirePayment(access.paymentId, access.token, method);
+    const { payment, booking, event } = await this.requirePayment(access.paymentId, access.token, method);
     if (payment.status === 'failed') throw new AppError('Payment is no longer payable', 409);
 
     const frontendUrl = this.frontendUrl();
@@ -38,8 +39,12 @@ export class MockPaymentController {
     <h1>Mock ${escapeHtml(method.toUpperCase())} Payment</h1>
     <p>University project payment simulator. No real payment will be charged.</p>
     <dl>
+      <dt>Event</dt><dd>${escapeHtml(event.title)}</dd>
+      <dt>Date</dt><dd>${escapeHtml(event.date.toISOString())}</dd>
+      <dt>Venue</dt><dd>${escapeHtml(event.venue || event.stadium || event.location)}</dd>
       <dt>Booking</dt><dd>${escapeHtml(booking.bookingRef)}</dd>
       <dt>Amount</dt><dd>Rs ${payment.amount.toFixed(2)}</dd>
+      <dt>Payment method</dt><dd>${escapeHtml(method.toUpperCase())}</dd>
       <dt>Status</dt><dd>${escapeHtml(payment.status)}</dd>
     </dl>
     <form method="post" action="${actionBase}/success">
@@ -106,7 +111,9 @@ export class MockPaymentController {
     if (payment.amount !== booking.totalAmount) {
       throw new AppError('Payment amount mismatch', 400);
     }
-    return { payment, booking };
+    const event = await Event.findById(booking.eventId);
+    if (!event) throw new AppError('Event not found', 404);
+    return { payment, booking, event };
   }
 
   private parseMethod(value: string | string[]): PaymentMethod {

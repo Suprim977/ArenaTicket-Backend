@@ -117,8 +117,11 @@ const run = async (): Promise<void> => {
       assert(
         page.status === 200
           && page.headers.get('content-type')?.startsWith('text/html')
-          && html.includes(`Rs ${initiated.payment.amount.toFixed(2)}`),
-        `${method} mock payment page opens with backend amount`,
+          && html.includes(`Rs ${initiated.payment.amount.toFixed(2)}`)
+          && html.includes('Mock Payment Audit')
+          && html.includes('Audit Arena')
+          && html.includes(method.toUpperCase()),
+        `${method} mock page shows event, venue, method, and backend amount`,
       );
 
       const form = new URLSearchParams({

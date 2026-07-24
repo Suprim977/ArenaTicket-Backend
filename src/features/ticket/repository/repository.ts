@@ -16,6 +16,7 @@ export class TicketRepository {
   getForUser(userId: string): Promise<ITicket[]> {
     return Ticket.find({ userId })
       .populate('eventId', 'title slug date location venue stadium imageUrl')
+      .populate('bookingId', 'bookingRef status totalAmount paymentMethod')
       .sort({ createdAt: -1 });
   }
 

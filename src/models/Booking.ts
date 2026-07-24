@@ -7,6 +7,7 @@ export interface IBooking extends Document {
   eventId: Types.ObjectId;
   tier: string;
   section: string;
+  unitPrice: number;
   quantity: number;
   subtotal: number;
   totalAmount: number;
@@ -21,6 +22,7 @@ const bookingSchema = new Schema<IBooking>({
   eventId: { type: Schema.Types.ObjectId, ref: 'Event', required: true, index: true },
   tier: { type: String, required: true, trim: true },
   section: { type: String, required: true, trim: true },
+  unitPrice: { type: Number, required: true, min: 0.01 },
   quantity: { type: Number, required: true, min: 1 },
   subtotal: { type: Number, required: true, min: 0 },
   totalAmount: { type: Number, required: true, min: 0 },

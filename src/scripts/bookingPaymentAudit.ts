@@ -104,7 +104,7 @@ const run = async (): Promise<void> => {
     ticketTier: 'normal' | 'vip',
     quantity: number,
     paymentMethod: PaymentMethod,
-  ): Promise<{ _id: string; totalAmount: number; subtotal: number }> => {
+  ): Promise<{ _id: string; unitPrice: number; totalAmount: number; subtotal: number }> => {
     const response = await request('/bookings', 'POST', userToken, {
       eventId: event._id.toString(),
       ticketTier,
@@ -117,21 +117,27 @@ const run = async (): Promise<void> => {
     });
     assert(response.status === 201, `Booking accepts ${paymentMethod}`);
     return (response.body.data as {
-      booking: { _id: string; totalAmount: number; subtotal: number };
+      booking: { _id: string; unitPrice: number; totalAmount: number; subtotal: number };
     }).booking;
   };
 
   try {
     const standardOne = await createBooking('normal', 1, 'card');
     assert(standardOne.totalAmount === 600, '1. Standard x1 totals Rs 600');
-    const standardTwo = await createBooking('normal', 2, 'card');
-    assert(standardTwo.totalAmount === 1200, '2. Standard x2 totals Rs 1,200');
+    const standardFour = await createBooking('normal', 4, 'card');
+    assert(
+      standardFour.unitPrice === 600 && standardFour.totalAmount === 2400,
+      '2. Standard x4 totals Rs 2,400',
+    );
     const vipOne = await createBooking('vip', 1, 'card');
     assert(vipOne.totalAmount === 1500, '3. VIP x1 totals Rs 1,500');
-    const vipTwo = await createBooking('vip', 2, 'card');
-    assert(vipTwo.totalAmount === 3000, '4. VIP x2 totals Rs 3,000');
+    const vipFour = await createBooking('vip', 4, 'card');
     assert(
-      vipTwo.subtotal === vipTwo.totalAmount,
+      vipFour.unitPrice === 1500 && vipFour.totalAmount === 6000,
+      '4. VIP x4 totals Rs 6,000',
+    );
+    assert(
+      vipFour.subtotal === vipFour.totalAmount,
       '5. No VAT, tax, booking fee, or service charge is added',
     );
 
@@ -207,7 +213,13 @@ const run = async (): Promise<void> => {
     const firstReload = await request('/tickets/my', 'GET', userToken);
     const secondReload = await request('/tickets/my', 'GET', userToken);
     const firstTicket = (firstReload.body.data as {
-      tickets: Array<{ _id: string; qrToken: string; qrCodeData: string }>;
+      tickets: Array<{
+        _id: string;
+        qrToken: string;
+        qrCodeData: string;
+        eventId: { title: string; date: string; location: string };
+        bookingId: { status: string; paymentMethod: string };
+      }>;
     }).tickets.find(item => item._id === ticket._id);
     const secondTicket = (secondReload.body.data as {
       tickets: Array<{ _id: string; qrToken: string; qrCodeData: string }>;
@@ -217,6 +229,11 @@ const run = async (): Promise<void> => {
         && secondTicket?.qrToken === ticket.qrToken
         && firstTicket?.qrCodeData === secondTicket?.qrCodeData,
       '12. Reloading a ticket returns the same QR token and QR image',
+    );
+    assert(
+      firstTicket?.eventId?.title === 'Booking Payment Audit'
+        && firstTicket?.bookingId?.status === 'confirmed',
+      'My tickets response includes event and confirmed booking/payment details',
     );
 
     const retry = await request('/payments/verify', 'POST', undefined, {

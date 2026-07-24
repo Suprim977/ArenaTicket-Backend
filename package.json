@@ -9,6 +9,8 @@
     "start": "node dist/server.js",
     "seed:events": "tsx src/scripts/seedEvents.ts",
     "migrate:event-prices": "tsx src/scripts/migrateEventPrices.ts",
+    "normalize:event-prices": "tsx src/scripts/normalizeEventPrices.ts",
+    "migrate:booking-unit-prices": "tsx src/scripts/migrateBookingUnitPrices.ts",
     "migrate:payment-indexes": "tsx src/scripts/migratePaymentIndexes.ts",
     "backfill:tickets": "tsx src/scripts/backfillTickets.ts",
     "test:security": "tsx src/scripts/rbacSecurityAudit.ts",
