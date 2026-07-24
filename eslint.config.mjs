@@ -19,6 +19,8 @@ export default [
         Buffer: 'readonly',
         Blob: 'readonly',
         FormData: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
         NodeJS: 'readonly',
         Express: 'readonly',
         __dirname: 'readonly',

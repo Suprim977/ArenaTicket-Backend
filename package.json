@@ -13,6 +13,7 @@
     "backfill:tickets": "tsx src/scripts/backfillTickets.ts",
     "test:security": "tsx src/scripts/rbacSecurityAudit.ts",
     "test:booking-payment": "tsx src/scripts/bookingPaymentAudit.ts",
+    "test:mock-payments": "tsx src/scripts/mockPaymentAudit.ts",
     "test:profile-picture": "tsx src/scripts/profilePictureAudit.ts",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext .ts",

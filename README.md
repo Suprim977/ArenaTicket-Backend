@@ -1,5 +1,21 @@
 # ArenaTicket Backend API
 
+## Local URLs
+
+- API base: `http://localhost:8089/api/v1`
+- Frontend: `http://localhost:3000`
+
+Mock payments are initiated through `POST /api/v1/payments/initiate`. The response
+contains the complete browser URL; the frontend should redirect to that value
+without rebuilding it:
+
+```text
+GET http://localhost:8089/api/v1/mock-payments/esewa?paymentId=<payment-id>&token=<opaque-token>
+```
+
+The same route supports `khalti` and `card`. The page reads the amount from the
+saved payment and booking; URL-supplied amounts are not accepted.
+
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express.js-000000?logo=express&logoColor=white)](https://expressjs.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)

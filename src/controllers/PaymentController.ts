@@ -2,14 +2,12 @@ import { randomUUID, timingSafeEqual } from 'crypto';
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest } from '../middlewares/auth';
-import { Booking, IBooking } from '../models/Booking';
-import { IPayment, Payment } from '../models/Payment';
-import { User } from '../models/User';
+import { Booking } from '../models/Booking';
+import { Payment } from '../models/Payment';
 import { AppError } from '../middlewares/errorHandler';
 import { sendSuccess } from '../utils/response';
 import { PAYMENT_METHODS } from '../constants/payment';
-import { TicketService } from '../features/ticket/service/ticket.service';
-import { ITicket } from '../features/ticket/model/ticket.model';
+import { PaymentFulfillmentService, money } from '../services/PaymentFulfillmentService';
 
 const initiateSchema = z.object({
   bookingId: z.string({ message: 'Booking ID is required.' }).trim().min(1, 'Booking ID is required.'),
@@ -21,7 +19,7 @@ const verifySchema = z.object({
 });
 
 export class PaymentController {
-  private readonly ticketService = new TicketService();
+  private readonly fulfillmentService = new PaymentFulfillmentService();
 
   initiate = async (req: AuthRequest, res: Response): Promise<void> => {
     const data = initiateSchema.parse(req.body);
@@ -36,16 +34,22 @@ export class PaymentController {
       throw new AppError('Payment method must match the booking payment method', 400);
     }
     const transactionRef = `${method.toUpperCase()}-${randomUUID()}`;
+    const mockToken = randomUUID();
     const payment = await Payment.create({
       bookingId: booking._id,
       userId: req.user!._id,
       method,
       amount: booking.totalAmount,
       transactionRef,
+      mockToken,
     });
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
-    const paymentUrl = `${baseUrl}/mock-payments/${method}?transactionRef=${encodeURIComponent(transactionRef)}`;
-    sendSuccess(res, { payment, paymentUrl }, 'Payment initiated successfully', 201);
+    const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+    const paymentUrl = `${baseUrl}/api/v1/mock-payments/${method}`
+      + `?paymentId=${encodeURIComponent(payment._id.toString())}`
+      + `&token=${encodeURIComponent(mockToken)}`;
+    const paymentResponse = payment.toObject() as unknown as Record<string, unknown>;
+    delete paymentResponse.mockToken;
+    sendSuccess(res, { payment: paymentResponse, paymentUrl }, 'Payment initiated successfully', 201);
   };
 
   verify = async (req: Request, res: Response): Promise<void> => {
@@ -73,7 +77,7 @@ export class PaymentController {
     if (!pendingPayment) {
       const completed = await Payment.findOne({ transactionRef: data.transactionRef, status: 'success' });
       if (completed) {
-        const result = await this.fulfillSuccessfulPayment(completed);
+        const result = await this.fulfillmentService.fulfillSuccessfulPayment(completed);
         sendSuccess(res, result, 'Payment already verified');
         return;
       }
@@ -90,49 +94,7 @@ export class PaymentController {
     );
     if (!claimed) throw new AppError('Payment is already being processed', 409);
 
-    const result = await this.fulfillSuccessfulPayment(claimed);
+    const result = await this.fulfillmentService.fulfillSuccessfulPayment(claimed);
     sendSuccess(res, result, 'Payment verified successfully');
   };
-
-  private async fulfillSuccessfulPayment(payment: IPayment): Promise<{
-    payment: IPayment;
-    booking: IBooking;
-    ticket: ITicket;
-  }> {
-    const booking = await Booking.findById(payment.bookingId);
-    if (!booking) throw new AppError('Booking not found', 404);
-    if (money(payment.amount) !== money(booking.totalAmount)) {
-      throw new AppError('Payment amount mismatch', 400);
-    }
-    if (booking.status === 'cancelled') {
-      throw new AppError('Cancelled booking cannot be fulfilled', 409);
-    }
-    if (booking.status !== 'confirmed') {
-      booking.status = 'confirmed';
-      await booking.save();
-    }
-
-    const ticket = await this.ticketService.issueForBooking(booking);
-    booking.qrCodeData = ticket.qrCodeData;
-    await booking.save();
-
-    const firstFulfillment = await Payment.findOneAndUpdate(
-      { _id: payment._id, fulfilledAt: { $exists: false } },
-      { $set: { ticketId: ticket._id, fulfilledAt: new Date() } },
-      { new: true },
-    );
-    if (firstFulfillment) {
-      await User.updateOne(
-        { _id: payment.userId },
-        { $inc: { ticketsCount: booking.quantity } },
-      );
-      payment = firstFulfillment;
-    } else {
-      payment = await Payment.findById(payment._id) ?? payment;
-    }
-
-    return { payment, booking, ticket };
-  }
 }
-
-const money = (value: number): number => Math.round((value + Number.EPSILON) * 100) / 100;

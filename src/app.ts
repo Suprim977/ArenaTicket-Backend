@@ -13,6 +13,7 @@ import paymentRoutes from './routes/payment.routes';
 import uploadRoutes from './features/upload/routes/upload.route';
 import adminRoutes from './routes/admin.routes';
 import ticketRoutes from './features/ticket/routes/ticket.route';
+import mockPaymentRoutes from './routes/mockPayment.routes';
 
 // Import middleware
 import { errorHandler } from './middlewares/errorHandler';
@@ -50,6 +51,7 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/tickets', ticketRoutes);
+app.use('/api/v1/mock-payments', mockPaymentRoutes);
 
 // Error handling
 app.use(errorHandler);

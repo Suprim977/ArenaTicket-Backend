@@ -10,6 +10,7 @@ export interface IPayment extends Document {
   transactionRef: string;
   ticketId?: Types.ObjectId;
   fulfilledAt?: Date;
+  mockToken: string;
 }
 
 const paymentSchema = new Schema<IPayment>({
@@ -21,6 +22,7 @@ const paymentSchema = new Schema<IPayment>({
   transactionRef: { type: String, required: true, unique: true, index: true },
   ticketId: { type: Schema.Types.ObjectId, ref: 'Ticket', unique: true, sparse: true },
   fulfilledAt: { type: Date },
+  mockToken: { type: String, required: true, unique: true, immutable: true, select: false },
 }, { timestamps: true, versionKey: false });
 
 paymentSchema.index({ bookingId: 1, status: 1 });
