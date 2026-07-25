@@ -23,7 +23,10 @@ import { UPLOADS_ROOT } from './config/paths';
 const app: Application = express();
 
 // Security & Performance middleware
-app.use(helmet());
+// Uploaded media is intentionally embedded by the frontend on a different origin.
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000').split(',').map((origin) => origin.trim());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
