@@ -44,6 +44,15 @@ const eventSchema = z.object({
 
 const parseMultipartBody = (body: Record<string, unknown>): Record<string, unknown> => {
   const parsed = { ...body };
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value === 'string' && value.trim() === '') {
+      delete parsed[key];
+    }
+  }
+  const numberFields = ['prizePool', 'standardPrice', 'vipPrice', 'standardCapacity', 'vipCapacity'];
+  for (const field of numberFields) {
+    if (typeof parsed[field] === 'string') parsed[field] = Number(parsed[field]);
+  }
   for (const field of ['ticketPrices', 'tiers', 'relatedEvents']) {
     if (typeof parsed[field] === 'string') {
       try {
@@ -53,9 +62,6 @@ const parseMultipartBody = (body: Record<string, unknown>): Record<string, unkno
       }
     }
   }
-  for (const field of ['prizePool']) {
-    if (typeof parsed[field] === 'string') parsed[field] = Number(parsed[field]);
-  }
   if (typeof parsed.availability === 'string') {
     if (!['true', 'false'].includes(parsed.availability)) {
       throw new AppError('availability must be true or false', 400);
@@ -63,6 +69,59 @@ const parseMultipartBody = (body: Record<string, unknown>): Record<string, unkno
     parsed.availability = parsed.availability === 'true';
   }
   return parsed;
+};
+
+const parseOptionalNumber = (value: unknown): number | undefined =>
+  typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+
+const resolveTierName = (tierName: string): 'normal' | 'vip' | null => {
+  if (/^(normal|standard)$/i.test(tierName)) return 'normal';
+  if (/^vip$/i.test(tierName)) return 'vip';
+  return null;
+};
+
+const mergeFlatTierFields = (
+  existingTiers: { name: string; price: number; capacity: number; available: number }[],
+  data: Record<string, unknown>,
+): { name: string; price: number; capacity: number; available: number }[] | undefined => {
+  const standardPrice = parseOptionalNumber(data.standardPrice);
+  const vipPrice = parseOptionalNumber(data.vipPrice);
+  const standardCapacity = parseOptionalNumber(data.standardCapacity);
+  const vipCapacity = parseOptionalNumber(data.vipCapacity);
+  const ticketsAvailable = typeof data.ticketsAvailable === 'boolean' ? data.ticketsAvailable : undefined;
+
+  if (
+    standardPrice === undefined
+    && vipPrice === undefined
+    && standardCapacity === undefined
+    && vipCapacity === undefined
+    && ticketsAvailable === undefined
+  ) {
+    return undefined;
+  }
+
+  return existingTiers.map(tier => {
+    const tierKey = resolveTierName(tier.name);
+    if (tierKey === 'normal') {
+      const capacity = standardCapacity ?? tier.capacity;
+      return {
+        ...tier,
+        price: standardPrice ?? tier.price,
+        capacity,
+        available: ticketsAvailable === false ? 0 : Math.min(tier.available, capacity),
+      };
+    }
+    if (tierKey === 'vip') {
+      const capacity = vipCapacity ?? tier.capacity;
+      return {
+        ...tier,
+        price: vipPrice ?? tier.price,
+        capacity,
+        available: ticketsAvailable === false ? 0 : Math.min(tier.available, capacity),
+      };
+    }
+    return tier;
+  });
 };
 
 const eventImagePath = (file: Express.Multer.File): string =>
@@ -151,14 +210,19 @@ export class EventController {
       if (!mongoose.isValidObjectId(req.params.id)) throw new AppError('Invalid event ID', 400);
       const existingEvent = await Event.findById(req.params.id);
       if (!existingEvent) throw new AppError('Event not found', 404);
+      const parsedBody = parseMultipartBody(req.body);
       const data = eventSchema.partial().parse({
-        ...parseMultipartBody(req.body),
+        ...parsedBody,
         ...(uploadedImage ? { imageUrl: uploadedImage } : {}),
       });
       const update: Record<string, unknown> = { ...data };
       if (data.ticketPrices) {
         update['tiers.$[normal].price'] = data.ticketPrices.normal;
         update['tiers.$[vip].price'] = data.ticketPrices.vip;
+      }
+      const mergedTiers = mergeFlatTierFields(existingEvent.tiers, parsedBody);
+      if (mergedTiers) {
+        update.tiers = mergedTiers;
       }
       const event = await Event.findByIdAndUpdate(req.params.id, update, {
         new: true,
