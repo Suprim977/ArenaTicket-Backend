@@ -5,8 +5,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 import app from './app';
 import { connectDatabase } from './config/database';
-
-const PORT = process.env.PORT || 8089;
+import { PORT } from './config/index';
 
 const startServer = async (): Promise<void> => {
   try {
