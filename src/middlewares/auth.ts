@@ -23,6 +23,9 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     if (!user) {
       return next(new AppError('User not found', 401));
     }
+    if (user.isActive === false) {
+      return next(new AppError('Account is inactive', 403));
+    }
 
     req.user = user;
     next();
