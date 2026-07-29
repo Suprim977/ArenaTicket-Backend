@@ -30,10 +30,10 @@ export class AuthController {
 
   forgotPassword = async (req: Request, res: Response): Promise<void> => {
     const { email } = forgotPasswordSchema.parse(req.body);
-    const result = await this.authService.forgotPassword(email);
+    await this.authService.forgotPassword(email);
     sendSuccess(
       res,
-      result,
+      null,
       'If an account exists for this email, password reset instructions have been sent.',
     );
   };
