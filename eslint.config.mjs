@@ -4,7 +4,7 @@ import tsParser from '@typescript-eslint/parser';
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'uploads/**'],
+    ignores: ['dist/**', 'node_modules/**', 'uploads/**', '*.cjs', 'scripts/**/*.cjs', 'jest.*.cjs'],
   },
   eslint.configs.recommended,
   {
@@ -32,11 +32,27 @@ export default [
     plugins: {
       '@typescript-eslint': tseslint,
     },
-    rules: {
+      rules: {
       ...tseslint.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    files: ['src/__tests__/**/*.ts'],
+    languageOptions: {
+      globals: {
+        jest: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        require: 'readonly',
+      },
     },
   },
 ];

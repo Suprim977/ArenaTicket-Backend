@@ -1,7 +1,9 @@
 import { User, IUser } from '../../../models/User';
 
 export class AuthRepository {
-  async createUser(userData: Pick<IUser, 'firstName' | 'lastName' | 'countryCode' | 'phoneNumber' | 'gender' | 'email' | 'password'>): Promise<IUser> {
+  async createUser(
+    userData: Pick<IUser, 'firstName' | 'lastName' | 'countryCode' | 'phoneNumber' | 'gender' | 'email' | 'password' | 'role'>,
+  ): Promise<IUser> {
     return await User.create(userData);
   }
 

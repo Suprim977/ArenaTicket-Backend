@@ -4,6 +4,7 @@ import { createHash, randomBytes } from 'crypto';
 import { AuthRepository } from '../repository/auth.repository';
 import { AppError } from '../../../middlewares/errorHandler';
 import { IUser } from '../../../models/User';
+import { ADMIN_REGISTRATION_SECRET } from '../../../config/index';
 import {
   DevelopmentResetDelivery,
   PasswordResetDeliveryService,
@@ -17,6 +18,13 @@ export type RegistrationInput = {
   gender: 'male' | 'female' | 'other';
   email: string;
   password: string;
+};
+
+export type AdminRegistrationInput = {
+  fullName: string;
+  email: string;
+  password: string;
+  adminRegistrationCode: string;
 };
 
 export type SafeUser = {
@@ -48,7 +56,38 @@ export class AuthService {
       throw new AppError('Phone number already registered for this country code', 409);
     }
 
-    const user = await this.authRepository.createUser(data);
+    const user = await this.authRepository.createUser({ ...data, role: 'user' });
+    const token = this.generateToken(user._id.toString());
+    return { user: this.toSafeUser(user), token, tokens: { accessToken: token } };
+  }
+
+  async registerAdmin(
+    data: AdminRegistrationInput,
+  ): Promise<{ user: SafeUser; token: string; tokens: { accessToken: string } }> {
+    if (!ADMIN_REGISTRATION_SECRET) {
+      throw new AppError('Admin registration is not configured', 500);
+    }
+    if (data.adminRegistrationCode !== ADMIN_REGISTRATION_SECRET) {
+      throw new AppError('Invalid admin registration code', 403);
+    }
+
+    const [firstName, ...rest] = data.fullName.trim().split(/\s+/);
+    const lastName = rest.join(' ').trim() || firstName;
+
+    if (await this.authRepository.findByEmail(data.email)) {
+      throw new AppError('Email already registered', 409);
+    }
+
+    const user = await this.authRepository.createUser({
+      firstName,
+      lastName,
+      countryCode: '+1',
+      phoneNumber: `9${randomBytes(5).toString('hex').slice(0, 9)}`,
+      gender: 'other',
+      email: data.email,
+      password: data.password,
+      role: 'admin',
+    });
     const token = this.generateToken(user._id.toString());
     return { user: this.toSafeUser(user), token, tokens: { accessToken: token } };
   }
@@ -63,6 +102,14 @@ export class AuthService {
     }
     const token = this.generateToken(user._id.toString());
     return { user: this.toSafeUser(user), token, tokens: { accessToken: token } };
+  }
+
+  async loginAdmin(email: string, password: string): Promise<{ user: SafeUser; token: string; tokens: { accessToken: string } }> {
+    const result = await this.login(email, password);
+    if (result.user.role !== 'admin') {
+      throw new AppError('Account is not an administrator', 403);
+    }
+    return result;
   }
 
   async forgotPassword(email: string): Promise<{

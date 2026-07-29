@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { AuthService } from '../features/auth/services/auth.service';
 import {
+  adminLoginSchema,
+  adminRegisterSchema,
   forgotPasswordSchema,
   registerSchema,
   resetPasswordSchema,
@@ -22,9 +24,21 @@ export class AuthController {
     sendSuccess(res, result, 'User registered successfully', 201);
   };
 
+  registerAdmin = async (req: Request, res: Response): Promise<void> => {
+    const { confirmPassword: _confirmPassword, role: _role, ...data } = adminRegisterSchema.parse(req.body);
+    const result = await this.authService.registerAdmin(data);
+    sendSuccess(res, result, 'Admin account created', 201);
+  };
+
   login = async (req: Request, res: Response): Promise<void> => {
     const data = loginSchema.parse(req.body);
     const result = await this.authService.login(data.email, data.password);
+    sendSuccess(res, result, 'Login successful');
+  };
+
+  loginAdmin = async (req: Request, res: Response): Promise<void> => {
+    const data = adminLoginSchema.parse(req.body);
+    const result = await this.authService.loginAdmin(data.email, data.password);
     sendSuccess(res, result, 'Login successful');
   };
 

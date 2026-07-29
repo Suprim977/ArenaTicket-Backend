@@ -10,6 +10,7 @@ describe('authenticate middleware', () => {
   const res: any = {};
 
   beforeEach(() => {
+    process.env.JWT_SECRET = 'secret';
     next.mockReset();
   });
 

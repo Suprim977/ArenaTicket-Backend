@@ -37,6 +37,23 @@ export const registerSchema = z.object({
   }
 });
 
+export const adminRegisterSchema = z.object({
+  fullName: z.string({ message: 'Full name is required' }).trim().min(2, 'Full name is required').max(100),
+  email: z.string({ message: 'Email is required' }).trim().toLowerCase().email('Invalid email address'),
+  password: passwordSchema,
+  confirmPassword: z.string({ message: 'Confirm password is required' }).min(1, 'Confirm password is required'),
+  adminRegistrationCode: z.string({ message: 'Admin registration code is required' }).trim().min(1, 'Admin registration code is required'),
+  role: z.unknown().optional(),
+}).strict().superRefine((data, context) => {
+  if (data.password !== data.confirmPassword) {
+    context.addIssue({
+      code: 'custom',
+      path: ['confirmPassword'],
+      message: 'Confirm password must match password',
+    });
+  }
+});
+
 export const forgotPasswordSchema = z.object({
   email: z.string({ message: 'Email is required' })
     .trim()
@@ -67,6 +84,11 @@ export const loginSchema = z.object({
     password: z.string().min(1, 'Password is required'),
   }),
 });
+
+export const adminLoginSchema = z.object({
+  email: z.string({ message: 'Email is required' }).trim().toLowerCase().email('Invalid email address'),
+  password: z.string({ message: 'Password is required' }).min(1, 'Password is required'),
+}).strict();
 
 export const updateProfileSchema = z.object({
   body: z.object({
