@@ -1,11 +1,6 @@
-import dotenv from 'dotenv';
-dotenv.config({ quiet: true });
-
-process.env.NODE_ENV = process.env.NODE_ENV || 'development';
-
 import app from './app';
 import { connectDatabase } from './config/database';
-import { PORT } from './config/index';
+import { NODE_ENV, PORT } from './config/index';
 
 const startServer = async (): Promise<void> => {
   try {
@@ -13,7 +8,7 @@ const startServer = async (): Promise<void> => {
     
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV}`);
+      console.log(`Environment: ${NODE_ENV}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
