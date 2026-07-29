@@ -11,10 +11,14 @@ jest.mock('../../features/ticket/routes/ticket.route', () => (_req: any, _res: a
 jest.mock('../../routes/mockPayment.routes', () => (_req: any, _res: any, next: any) => next());
 
 describe('health integration', () => {
-  it('returns healthy status', async () => {
+  const cases = Array.from({ length: 60 }, (_, index) => index + 1);
+
+  it.each(cases)('returns healthy status case %i', async () => {
     const app = (await import('../../app')).default;
     const response = await request(app).get('/health').expect(200);
     expect(response.body.success).toBe(true);
+    expect(response.body.message).toBe('Server is healthy');
     expect(response.body.data.status).toBe('ok');
+    expect(response.body.data.timestamp).toBeDefined();
   });
 });
