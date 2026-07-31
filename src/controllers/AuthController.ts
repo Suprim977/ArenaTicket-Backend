@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { AuthService } from '../features/auth/services/auth.service';
+import { AppError } from '../middlewares/errorHandler';
 import {
   adminLoginSchema,
   adminRegisterSchema,
@@ -33,12 +34,18 @@ export class AuthController {
   login = async (req: Request, res: Response): Promise<void> => {
     const data = loginSchema.parse(req.body);
     const result = await this.authService.login(data.email, data.password);
+    if (result.user.role === 'admin') {
+      throw new AppError('Admin accounts must use the admin login portal.', 403);
+    }
     sendSuccess(res, result, 'Login successful');
   };
 
   loginAdmin = async (req: Request, res: Response): Promise<void> => {
     const data = adminLoginSchema.parse(req.body);
     const result = await this.authService.loginAdmin(data.email, data.password);
+    if (result.user.role !== 'admin') {
+      throw new AppError('User accounts must use the normal login portal.', 403);
+    }
     sendSuccess(res, result, 'Login successful');
   };
 

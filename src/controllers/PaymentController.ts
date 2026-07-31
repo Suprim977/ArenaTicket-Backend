@@ -65,6 +65,38 @@ export class PaymentController {
     sendSuccess(res, { payment: paymentResponse, paymentUrl }, 'Payment initiated successfully', 201);
   };
 
+  status = async (req: AuthRequest, res: Response): Promise<void> => {
+    const paymentId = Array.isArray(req.params.paymentId)
+      ? req.params.paymentId[0]
+      : req.params.paymentId;
+    if (!mongoose.isValidObjectId(paymentId)) throw new AppError('Invalid payment ID', 400);
+    const payment = await Payment.findById(paymentId)
+      .populate('bookingId', 'bookingRef status totalAmount paymentMethod userId eventId')
+      .populate('ticketId', 'ticketNumber ticketTier section quantity status');
+    if (!payment) throw new AppError('Payment not found', 404);
+
+    const booking = await Booking.findById(payment.bookingId).select('userId');
+    if (!booking) throw new AppError('Booking not found', 404);
+    if (req.user?.role !== 'admin' && booking.userId.toString() !== req.user!._id.toString()) {
+      throw new AppError('Payment not found', 404);
+    }
+
+    sendSuccess(res, {
+      payment: {
+        _id: payment._id,
+        bookingId: payment.bookingId,
+        ticketId: payment.ticketId,
+        method: payment.method,
+        amount: payment.amount,
+        status: payment.status,
+        transactionRef: payment.transactionRef,
+        fulfilledAt: payment.fulfilledAt ?? null,
+        createdAt: payment.createdAt,
+        updatedAt: payment.updatedAt,
+      },
+    }, 'Payment status retrieved successfully');
+  };
+
   mockSession = async (req: Request, res: Response): Promise<void> => {
     const paymentId = Array.isArray(req.params.paymentId)
       ? req.params.paymentId[0]

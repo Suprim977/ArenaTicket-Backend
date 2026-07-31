@@ -9,4 +9,5 @@ router.use(authenticate);
 router.post('/', asyncHandler(controller.create));
 router.get('/my-bookings', asyncHandler(controller.myBookings));
 router.get('/:bookingRef', asyncHandler(controller.getOne));
+router.post('/:bookingRef/cancel', asyncHandler(controller.cancel));
 export default router;

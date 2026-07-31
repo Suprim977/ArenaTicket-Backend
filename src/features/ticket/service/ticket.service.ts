@@ -67,6 +67,22 @@ export class TicketService {
     return ticket.populate('eventId', 'title slug date location venue stadium');
   }
 
+  async checkIn(qrToken: string): Promise<ITicket> {
+    const ticket = await this.ticketRepository.findByToken(qrToken);
+    if (!ticket) throw new AppError('Ticket not found', 404);
+    if (ticket.status === 'cancelled') throw new AppError('Ticket is cancelled', 409);
+    if (ticket.status === 'used') throw new AppError('Ticket already checked in', 409);
+    const booking = await Booking.findById(ticket.bookingId);
+    if (!booking) throw new AppError('Booking not found', 404);
+    if (booking.status !== 'confirmed') {
+      throw new AppError('Ticket booking is not confirmed', 409);
+    }
+    ticket.status = 'used';
+    ticket.usedAt = new Date();
+    await ticket.save();
+    return ticket.populate('eventId', 'title slug date location venue stadium');
+  }
+
   private generateTicketNumber(): string {
     const year = new Date().getFullYear();
     return `AT-${year}-${randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()}`;

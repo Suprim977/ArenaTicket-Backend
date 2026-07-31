@@ -9,6 +9,7 @@ const controller = new TicketController();
 
 router.get('/my', authenticate, asyncHandler(controller.getMyTickets));
 router.get('/verify/:token', authenticate, authorize('admin'), asyncHandler(controller.verifyTicket));
+router.post('/check-in/:token', authenticate, authorize('admin'), asyncHandler(controller.checkInTicket));
 router.get('/', authenticate, authorize('admin'), asyncHandler(controller.getAllTickets));
 
 export default router;

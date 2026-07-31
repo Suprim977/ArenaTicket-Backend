@@ -24,4 +24,12 @@ export class TicketController {
     const ticket = await this.ticketService.verify(token.trim());
     sendSuccess(res, { ticket }, 'Ticket is valid');
   };
+
+  checkInTicket = async (req: AuthRequest, res: Response): Promise<void> => {
+    const value = req.params.token;
+    const token = Array.isArray(value) ? value[0] : value;
+    if (!token?.trim()) throw new AppError('QR token is required', 400);
+    const ticket = await this.ticketService.checkIn(token.trim());
+    sendSuccess(res, { ticket }, 'Ticket checked in successfully');
+  };
 }

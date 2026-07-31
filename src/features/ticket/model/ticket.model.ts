@@ -12,6 +12,7 @@ export interface ITicket extends Document {
   qrToken: string;
   qrCodeData: string;
   status: 'valid' | 'used' | 'cancelled';
+  usedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +28,7 @@ const ticketSchema = new Schema<ITicket>({
   qrToken: { type: String, required: true, unique: true, immutable: true, index: true },
   qrCodeData: { type: String, required: true, immutable: true },
   status: { type: String, enum: ['valid', 'used', 'cancelled'], default: 'valid', index: true },
+  usedAt: { type: Date, default: null },
 }, { timestamps: true, versionKey: false });
 
 export const Ticket: Model<ITicket> =

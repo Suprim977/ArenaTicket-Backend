@@ -100,16 +100,26 @@ export class AuthService {
     if (!user.isActive) {
       throw new AppError('Account is inactive', 403);
     }
+    if (user.role === 'admin') {
+      throw new AppError('Admin accounts must use the admin login portal.', 403);
+    }
     const token = this.generateToken(user._id.toString());
     return { user: this.toSafeUser(user), token, tokens: { accessToken: token } };
   }
 
   async loginAdmin(email: string, password: string): Promise<{ user: SafeUser; token: string; tokens: { accessToken: string } }> {
-    const result = await this.login(email, password);
-    if (result.user.role !== 'admin') {
-      throw new AppError('Account is not an administrator', 403);
+    const user = await this.authRepository.findByEmail(email);
+    if (!user || !(await user.comparePassword(password))) {
+      throw new AppError('Invalid email or password', 401);
     }
-    return result;
+    if (!user.isActive) {
+      throw new AppError('Account is inactive', 403);
+    }
+    if (user.role !== 'admin') {
+      throw new AppError('User accounts must use the normal login portal.', 403);
+    }
+    const token = this.generateToken(user._id.toString());
+    return { user: this.toSafeUser(user), token, tokens: { accessToken: token } };
   }
 
   async forgotPassword(email: string): Promise<{

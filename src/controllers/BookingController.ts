@@ -124,4 +124,17 @@ export class BookingController {
     if (!booking) throw new AppError('Booking not found', 404);
     sendSuccess(res, { booking }, 'Booking retrieved successfully');
   };
+
+  cancel = async (req: AuthRequest, res: Response): Promise<void> => {
+    const booking = await Booking.findOne({
+      bookingRef: req.params.bookingRef,
+      userId: req.user!._id,
+    });
+    if (!booking) throw new AppError('Booking not found', 404);
+    if (booking.status === 'cancelled') throw new AppError('Booking is already cancelled', 409);
+    if (booking.status === 'confirmed') throw new AppError('Confirmed bookings cannot be cancelled', 409);
+    booking.status = 'cancelled';
+    await booking.save();
+    sendSuccess(res, { booking }, 'Booking cancelled successfully');
+  };
 }
