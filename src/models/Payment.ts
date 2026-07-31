@@ -11,6 +11,8 @@ export interface IPayment extends Document {
   ticketId?: Types.ObjectId;
   fulfilledAt?: Date;
   mockToken: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const paymentSchema = new Schema<IPayment>({

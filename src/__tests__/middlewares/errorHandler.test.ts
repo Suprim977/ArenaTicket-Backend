@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { ZodError, z } from 'zod';
+import { z } from 'zod';
 import multer from 'multer';
 import { AppError, errorHandler } from '../../middlewares/errorHandler';
 
